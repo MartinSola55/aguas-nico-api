@@ -17,11 +17,11 @@ public class CatalogService(APIContext context)
         {
             Data = new GetCatalogResponse
             {
-                States = Enum.GetValues<State>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.GetDisplayName() }).ToList(),
-                ProductTypes = Enum.GetValues<ProductType>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.GetDisplayName() }).ToList(),
-                Days = Enum.GetValues<Day>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.ToString() }).ToList(),
-                InvoiceTypes = Enum.GetValues<InvoiceType>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.GetDisplayName() }).ToList(),
-                TaxConditions = Enum.GetValues<TaxCondition>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.GetDisplayName() }).ToList(),
+                States = [.. Enum.GetValues<State>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.GetDisplayName() })],
+                ProductTypes = [.. Enum.GetValues<ProductType>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.GetDisplayName() })],
+                Days = [.. Enum.GetValues<Day>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.ToString() })],
+                InvoiceTypes = [.. Enum.GetValues<InvoiceType>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.GetDisplayName() })],
+                TaxConditions = [.. Enum.GetValues<TaxCondition>().Select(x => new EnumItem<int> { Id = (int)x, Description = x.GetDisplayName() })],
                 PaymentMethods = await _db.PaymentMethods.AsNoTracking().Select(x => new PaymentMethodCatalogItem
                 {
                     Id = x.ID,

@@ -68,5 +68,3 @@ public class AuthService(TokenService tokenService, UserManager<ApplicationUser>
     public bool IsAdmin() => _tokenService.GetToken().Role == Roles.Admin;
     public bool IsDealer() => _tokenService.GetToken().Role == Roles.Dealer;
 }
-
-

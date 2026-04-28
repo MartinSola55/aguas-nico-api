@@ -35,6 +35,7 @@ public class ExpenseService(APIContext context)
                         Description = x.Description,
                         CreatedAt = x.CreatedAt
                     })
+                    .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync()
             }
         };
@@ -149,6 +150,7 @@ public class ExpenseService(APIContext context)
                         Description = x.Description,
                         Amount = x.Amount
                     })
+                    .OrderBy(x => x.Description)
                     .ToListAsync()
             }
         };
@@ -162,9 +164,9 @@ public class ExpenseService(APIContext context)
         if (amount < 0 || amount > 10000000)
             return rs.SetError(Messages.Error.InvalidField("monto"));
         if (string.IsNullOrWhiteSpace(description))
-            return rs.SetError(Messages.Error.FieldRequired("descripciÃ³n"));
+            return rs.SetError(Messages.Error.FieldRequired("descripción"));
         if (description.Length > 200)
-            return rs.SetError(Messages.Error.InvalidField("descripciÃ³n"));
+            return rs.SetError(Messages.Error.InvalidField("descripción"));
         return rs;
     }
 }

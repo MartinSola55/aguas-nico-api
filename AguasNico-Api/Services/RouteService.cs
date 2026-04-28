@@ -102,7 +102,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
         if (!await _db.User.AnyAsync(x => x.Id == rq.UserId))
             return rs.SetError(Messages.Error.EntityNotFound("Repartidor"));
         if (await _db.Routes.AnyAsync(x => x.DayOfWeek == rq.DayOfWeek && x.IsStatic && x.UserID == rq.UserId))
-            return rs.SetError("El repartidor ya tiene una planilla para ese dÃ­a");
+            return rs.SetError("El repartidor ya tiene una planilla para ese día");
 
         var route = new Models.Route
         {
@@ -264,7 +264,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
             return rs.SetError(Messages.Error.Exception());
         }
 
-        rs.Message = "La planilla se cerrÃ³ correctamente";
+        rs.Message = "La planilla se cerró correctamente";
         return rs;
     }
 

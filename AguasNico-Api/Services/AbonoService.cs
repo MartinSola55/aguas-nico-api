@@ -32,6 +32,8 @@ public class AbonoService(APIContext context)
                             Quantity = p.Quantity
                         }).ToList()
                     })
+                    .OrderBy(x => x.Name)
+                    .ThenBy(x => x.Price)
                     .ToListAsync()
             }
         };
@@ -251,6 +253,7 @@ public class AbonoService(APIContext context)
                         OnlyAbonos = x.Client.OnlyAbonos,
                         IsActive = x.Client.IsActive
                     })
+                    .OrderBy(x => x.Name)
                     .ToListAsync()
             }
         };

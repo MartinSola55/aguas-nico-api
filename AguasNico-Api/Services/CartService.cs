@@ -31,7 +31,7 @@ public class CartService(APIContext context)
         if (cart == null)
             return rs.SetError(Messages.Error.EntityNotFound("Bajada", true));
         if (cart.State != State.Confirmed)
-            return rs.SetError("No se puede editar una bajada que no estÃ© confirmada");
+            return rs.SetError("No se puede editar una bajada que no esté confirmada");
 
         var clientProducts = await _db.ClientProducts
             .AsNoTracking()
@@ -59,7 +59,7 @@ public class CartService(APIContext context)
             RouteId = cart.RouteID,
             ClientName = cart.ClientName,
             State = cart.State,
-            Products = clientProducts.Select(x =>
+            Products = [.. clientProducts.Select(x =>
             {
                 var selected = cartProducts.FirstOrDefault(p => p.Type == x.Type);
                 return new ProductQuantityItem
@@ -69,8 +69,8 @@ public class CartService(APIContext context)
                     Quantity = selected?.Quantity ?? 0,
                     SettedPrice = selected?.SettedPrice ?? x.Price
                 };
-            }).ToList(),
-            AbonoProducts = abonoTypes.Select(x =>
+            })],
+            AbonoProducts = [.. abonoTypes.Select(x =>
             {
                 var selected = cartAbonoProducts.FirstOrDefault(p => p.Type == x);
                 return new ProductQuantityItem
@@ -79,8 +79,8 @@ public class CartService(APIContext context)
                     TypeName = x.GetDisplayName(),
                     Quantity = selected?.Quantity ?? 0
                 };
-            }).ToList(),
-            ReturnedProducts = clientProducts.Select(x =>
+            })],
+            ReturnedProducts = [.. clientProducts.Select(x =>
             {
                 var selected = returnedProducts.FirstOrDefault(p => p.Type == x.Type);
                 return new ProductQuantityItem
@@ -89,7 +89,7 @@ public class CartService(APIContext context)
                     TypeName = x.Type.GetDisplayName(),
                     Quantity = selected?.Quantity ?? 0
                 };
-            }).ToList(),
+            })],
             PaymentMethods = await _db.PaymentMethods
                 .AsNoTracking()
                 .Select(x => new GetCartForEditResponse.PaymentMethodOptionItem
@@ -138,7 +138,7 @@ public class CartService(APIContext context)
         var rs = new BaseResponse();
         var cartState = await _db.Carts.AsNoTracking().Where(x => x.ID == rq.Id).Select(x => x.State).FirstOrDefaultAsync();
         if (cartState != State.Pending)
-            return rs.SetError("La bajada ya ha sido efectuada. Recargue la pÃ¡gina y vuelva a intentar");
+            return rs.SetError("La bajada ya ha sido efectuada. Recargue la página y vuelva a intentar");
 
         try
         {
@@ -169,7 +169,7 @@ public class CartService(APIContext context)
         var rs = new BaseResponse<ConfirmManualCartResponse>();
         var existing = await _db.Carts.AsNoTracking().FirstOrDefaultAsync(x => x.RouteID == rq.RouteId && x.ClientID == rq.ClientId && !x.IsStatic);
         if (existing != null && existing.State != State.Pending)
-            return rs.SetError("La bajada ya ha sido efectuada. Recargue la pÃ¡gina y vuelva a intentar");
+            return rs.SetError("La bajada ya ha sido efectuada. Recargue la página y vuelva a intentar");
 
         var maxPriority = await _db.Carts.Where(x => x.RouteID == rq.RouteId).Select(x => (int?)x.Priority).MaxAsync() ?? 0;
         var cart = new Cart
@@ -179,9 +179,9 @@ public class CartService(APIContext context)
             State = State.Confirmed,
             IsStatic = false,
             Priority = maxPriority + 1,
-            Products = rq.Products.Where(x => x.Quantity > 0).Select(x => new CartProduct { Type = x.Type, Quantity = x.Quantity }).ToList(),
-            AbonoProducts = rq.AbonoProducts.Where(x => x.Quantity > 0).Select(x => new CartAbonoProduct { Type = x.Type, Quantity = x.Quantity }).ToList(),
-            PaymentMethods = rq.PaymentMethods.Select(x => new CartPaymentMethod { PaymentMethodID = x.PaymentMethodId, Amount = x.Amount }).ToList()
+            Products = [.. rq.Products.Where(x => x.Quantity > 0).Select(x => new CartProduct { Type = x.Type, Quantity = x.Quantity })],
+            AbonoProducts = [.. rq.AbonoProducts.Where(x => x.Quantity > 0).Select(x => new CartAbonoProduct { Type = x.Type, Quantity = x.Quantity })],
+            PaymentMethods = [.. rq.PaymentMethods.Select(x => new CartPaymentMethod { PaymentMethodID = x.PaymentMethodId, Amount = x.Amount })]
         };
 
         try
@@ -235,7 +235,7 @@ public class CartService(APIContext context)
 
         rs.Data = new GetReturnedProductsResponse
         {
-            Items = clientProducts.Select(type =>
+            Items = [.. clientProducts.Select(type =>
             {
                 var returned = returnedProducts.FirstOrDefault(x => x.Type == type);
                 return new ProductQuantityItem
@@ -244,7 +244,7 @@ public class CartService(APIContext context)
                     TypeName = type.GetDisplayName(),
                     Quantity = returned?.Quantity ?? 0
                 };
-            }).ToList()
+            })]
         };
 
         return rs;

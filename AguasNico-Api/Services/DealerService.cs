@@ -32,6 +32,7 @@ public class DealerService(APIContext context, RouteService routeService)
                         Email = x.Email ?? "",
                         TruckNumber = x.TruckNumber ?? 0
                     })
+                    .OrderBy(x => x.Name)
                     .ToListAsync()
             }
         };
@@ -110,7 +111,7 @@ public class DealerService(APIContext context, RouteService routeService)
 
         rs.Data = new GetDealerSheetsResponse
         {
-            Sheets = staticCarts.Select(cart => new DealerSheetItem
+            Sheets = [.. staticCarts.Select(cart => new DealerSheetItem
             {
                 Day = cart.Day,
                 ClientId = cart.ClientID,
@@ -119,20 +120,20 @@ public class DealerService(APIContext context, RouteService routeService)
                 ClientAddress = cart.ClientAddress,
                 ClientObservations = cart.ClientObservations,
                 ClientDebt = cart.ClientDebt,
-                Products = cart.OnlyAbonos ? [] : cart.Products.Select(p => new DealerSheetItem.ProductSheetItem
+                Products = cart.OnlyAbonos ? [] : [.. cart.Products.Select(p => new DealerSheetItem.ProductSheetItem
                 {
                     Type = p.Type,
                     TypeName = p.Type.GetDisplayName(),
                     Price = p.Price,
                     Stock = p.Stock
-                }).ToList(),
-                Abonos = cart.Abonos.Select(a => new DealerSheetItem.AbonoSheetItem
+                })],
+                Abonos = [.. cart.Abonos.Select(a => new DealerSheetItem.AbonoSheetItem
                 {
                     Id = a.ID,
                     Name = a.Name,
                     Price = a.Price
-                }).ToList(),
-                AbonoProducts = cart.Abonos
+                })],
+                AbonoProducts = [.. cart.Abonos
                     .SelectMany(a => a.Products)
                     .Where(p => p.Type != ProductType.Maquina)
                     .Select(p => new DealerSheetItem.AbonoProductSheetItem
@@ -142,8 +143,8 @@ public class DealerService(APIContext context, RouteService routeService)
                         TypeName = p.Type.GetDisplayName(),
                         Available = p.Available,
                         Stock = cart.Products.FirstOrDefault(y => y.Type == p.Type)?.Stock ?? 0
-                    }).ToList()
-            }).ToList()
+                    })]
+            })]
         };
 
         return rs;
@@ -173,6 +174,7 @@ public class DealerService(APIContext context, RouteService routeService)
                         OnlyAbonos = x.OnlyAbonos,
                         IsActive = x.IsActive
                     })
+                    .OrderBy(x => x.Name)
                     .ToListAsync()
             }
         };
@@ -201,6 +203,7 @@ public class DealerService(APIContext context, RouteService routeService)
                 OnlyAbonos = x.OnlyAbonos,
                 IsActive = x.IsActive
             })
+            .OrderBy(x => x.Name)
             .ToListAsync();
 
         return new BaseResponse<GetClientsNotVisitedResponse>

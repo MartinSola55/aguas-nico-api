@@ -33,6 +33,8 @@ public class ProductService(APIContext context)
                         SortOrder = x.SortOrder,
                         IsActive = x.IsActive
                     })
+                    .OrderBy(x => x.SortOrder)
+                    .ThenBy(x => x.Name)
                     .ToListAsync()
             }
         };
@@ -176,6 +178,7 @@ public class ProductService(APIContext context)
                         OnlyAbonos = x.Client.OnlyAbonos,
                         IsActive = x.Client.IsActive
                     })
+                    .OrderBy(x => x.Name)
                     .ToListAsync()
             }
         };

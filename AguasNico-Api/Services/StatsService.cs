@@ -36,13 +36,12 @@ public class StatsService(APIContext context)
         {
             Data = new GetAnnualProfitsResponse
             {
-                Items = Enumerable.Range(1, 12)
+                Items = [.. Enumerable.Range(1, 12)
                     .Select(month => new PeriodProfitItem
                     {
                         Period = $"{rq.Year}-{month.ToString().PadLeft(2, '0')}",
                         Sold = cartsByMonth.FirstOrDefault(x => x.Month == month)?.Profit ?? 0
-                    })
-                    .ToList()
+                    })]
             }
         };
     }

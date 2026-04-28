@@ -44,6 +44,7 @@ public class ClientService(APIContext context)
                         OnlyAbonos = x.OnlyAbonos,
                         IsActive = x.IsActive
                     })
+                    .OrderBy(x => x.Name)
                     .ToListAsync()
             }
         };
@@ -245,7 +246,7 @@ public class ClientService(APIContext context)
         oldClient.UpdatedAt = LocalClock.Now;
 
         await _db.SaveChangesAsync();
-        rs.Message = Messages.CRUD.EntitiesUpdated("datos de facturaciÃ³n");
+        rs.Message = Messages.CRUD.EntitiesUpdated("datos de facturación");
         return rs;
     }
 
@@ -622,13 +623,13 @@ public class ClientService(APIContext context)
         if (rq.Name.Length > 200)
             return rs.SetError(Messages.Error.InvalidField("nombre"));
         if (string.IsNullOrWhiteSpace(rq.Address))
-            return rs.SetError(Messages.Error.FieldRequired("direcciÃ³n"));
+            return rs.SetError(Messages.Error.FieldRequired("dirección"));
         if (rq.Address.Length > 200)
-            return rs.SetError(Messages.Error.InvalidField("direcciÃ³n"));
+            return rs.SetError(Messages.Error.InvalidField("dirección"));
         if (string.IsNullOrWhiteSpace(rq.Phone))
-            return rs.SetError(Messages.Error.FieldRequired("telÃ©fono"));
+            return rs.SetError(Messages.Error.FieldRequired("teléfono"));
         if (rq.Phone.Length > 200)
-            return rs.SetError(Messages.Error.InvalidField("telÃ©fono"));
+            return rs.SetError(Messages.Error.InvalidField("teléfono"));
         if (!string.IsNullOrEmpty(rq.Email) && rq.Email.Length > 200)
             return rs.SetError(Messages.Error.InvalidField("email"));
         if (!string.IsNullOrEmpty(rq.Observations) && rq.Observations.Length > 300)

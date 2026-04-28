@@ -37,6 +37,8 @@ public class TransferService(APIContext context)
                         Date = x.Date,
                         CreatedAt = x.CreatedAt
                     })
+                    .OrderByDescending(x => x.Date)
+                    .ThenBy(x => x.Amount)
                     .ToListAsync()
             }
         };
@@ -176,6 +178,8 @@ public class TransferService(APIContext context)
                         Date = x.Date,
                         CreatedAt = x.CreatedAt
                     })
+                    .OrderByDescending(x => x.Date)
+                    .ThenBy(x => x.Amount)
                     .ToListAsync()
             }
         };

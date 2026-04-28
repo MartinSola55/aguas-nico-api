@@ -36,6 +36,8 @@ public class HomeService(APIContext context, TokenService tokenService, RouteSer
                     Amount = x.Amount,
                     Date = x.Date
                 })
+                .OrderByDescending(x => x.Date)
+                .ThenBy(x => x.ClientName)
                 .ToListAsync();
 
             response.Dealers = dealers.Data?.Items ?? [];
@@ -52,6 +54,8 @@ public class HomeService(APIContext context, TokenService tokenService, RouteSer
                     Description = x.Description,
                     CreatedAt = x.CreatedAt
                 })
+                .OrderByDescending (x => x.CreatedAt)
+                .ThenBy(x => x.Description)
                 .ToListAsync();
             response.Payments = await GetTotalCollected(today);
             response.Transfers = transfers;
@@ -79,6 +83,7 @@ public class HomeService(APIContext context, TokenService tokenService, RouteSer
                     CompletedCarts = x.Carts.Count(y => y.State != State.Pending),
                     PendingCarts = x.Carts.Count(y => y.State == State.Pending)
                 })
+                .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
         }
 

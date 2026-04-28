@@ -45,12 +45,12 @@ public class InvoiceService(APIContext context)
                     ClientName = client.Name,
                     ClientAddress = client.Address,
                     ClientCuit = client.CUIT ?? "",
-                    Products = paidProducts.GroupBy(x => x.Type).Select(group => new InvoiceProductItem
+                    Products = [.. paidProducts.GroupBy(x => x.Type).Select(group => new InvoiceProductItem
                     {
                         Type = group.Key.GetDisplayName(),
                         Quantity = group.Sum(x => x.Quantity),
                         Total = group.Sum(x => x.SettedPrice * x.Quantity)
-                    }).ToList()
+                    })]
                 });
             }
 
@@ -67,12 +67,12 @@ public class InvoiceService(APIContext context)
                     ClientName = client.Name,
                     ClientAddress = client.Address,
                     ClientCuit = client.CUIT ?? "",
-                    Products = abonoProducts.GroupBy(x => x.Type).Select(group => new InvoiceProductItem
+                    Products = [.. abonoProducts.GroupBy(x => x.Type).Select(group => new InvoiceProductItem
                     {
                         Type = group.Key.GetDisplayName(),
                         Quantity = group.Sum(x => x.Quantity),
                         Total = 0
-                    }).ToList()
+                    })]
                 });
                 continue;
             }
@@ -89,7 +89,10 @@ public class InvoiceService(APIContext context)
 
         return new BaseResponse<GetInvoicesResponse>
         {
-            Data = new GetInvoicesResponse { Items = invoices }
+            Data = new GetInvoicesResponse
+            {
+                Items = [.. invoices.OrderBy(x => x.ClientName)]
+            }
         };
     }
 
