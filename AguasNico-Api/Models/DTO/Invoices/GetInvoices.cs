@@ -5,7 +5,7 @@ public class GetInvoicesRequest
 {
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
-    public Day InvoiceDay { get; set; }
+    public Day? InvoiceDay { get; set; }
     public string InvoiceDealer { get; set; }
 }
 
