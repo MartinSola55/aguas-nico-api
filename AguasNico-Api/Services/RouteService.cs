@@ -527,7 +527,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
             TotalCarts = x.Carts.Count,
             CompletedCarts = x.Carts.Count(y => y.State != State.Pending),
             PendingCarts = x.Carts.Count(y => y.State == State.Pending)
-        });
+        }).OrderBy(x => x.DealerName);
     }
 
     private IQueryable<Client> ClientsNotInRouteQuery(long routeId)
