@@ -1,17 +1,19 @@
-using AguasNico_Api.DAL.Seeding;
 using AguasNico_Api.Models;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace AguasNico_Api.DAL.DB;
 
-public class APIContext(DbContextOptions<APIContext> options) : IdentityDbContext<ApplicationUser>(options)
+public class APIContext(DbContextOptions<APIContext> options) : DbContext(options)
 {
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-        new DbInitializer(builder).Seed();
+        foreach (var property in builder.Model.GetEntityTypes().SelectMany(x => x.GetProperties()))
+        {
+            if (property.ClrType == typeof(DateTime) || property.ClrType == typeof(DateTime?))
+                property.SetColumnType("timestamp with time zone");
+        }
 
         builder.Entity<CartPaymentMethod>().HasKey(entity => new { entity.CartID, entity.PaymentMethodID });
         builder.Entity<CartProduct>().HasKey(entity => new { entity.Type, entity.CartID });
@@ -37,9 +39,12 @@ public class APIContext(DbContextOptions<APIContext> options) : IdentityDbContex
         builder.Entity<AbonoRenewal>().HasQueryFilter(entity => entity.DeletedAt == null);
         builder.Entity<AbonoRenewalProduct>().HasQueryFilter(entity => entity.DeletedAt == null);
         builder.Entity<CartAbonoProduct>().HasQueryFilter(entity => entity.DeletedAt == null);
+        builder.Entity<User>().HasQueryFilter(entity => entity.DeletedAt == null);
     }
 
-    public DbSet<ApplicationUser> User { get; set; }
+    public DbSet<Migration> Migration { get; set; }
+    public DbSet<Role> Role { get; set; }
+    public DbSet<User> User { get; set; }
     public DbSet<Abono> Abonos { get; set; }
     public DbSet<AbonoProduct> AbonoProducts { get; set; }
     public DbSet<AbonoRenewal> AbonoRenewals { get; set; }

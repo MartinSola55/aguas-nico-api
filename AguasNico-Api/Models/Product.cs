@@ -15,7 +15,7 @@ public class Product
     public string Name { get; set; }
 
     [Required(ErrorMessage = "Debes ingresar un precio")]
-    [Column(TypeName = "money")]
+    [Column(TypeName = "numeric(18,2)")]
     [Range(0, 1000000, ErrorMessage = "Debes ingresar un precio válido")]
     public decimal Price { get; set; }
 

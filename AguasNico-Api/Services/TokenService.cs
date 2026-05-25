@@ -1,4 +1,4 @@
-﻿using AguasNico_Api.Models;
+using AguasNico_Api.Models;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,21 +13,35 @@ public class TokenService(IHttpContextAccessor httpContextAccessor, IConfigurati
 
     public Token GetToken()
     {
-        if (_httpContextAccessor.HttpContext == null)
-            throw new Exception("No se ha podido encontrar el token");
+        return TryGetToken() ?? throw new Exception("No se ha podido encontrar el token");
+    }
 
-        var claims = _httpContextAccessor.HttpContext.User.Claims;
+    public Token TryGetToken()
+    {
+        var user = _httpContextAccessor.HttpContext?.User;
+        if (user?.Identity?.IsAuthenticated != true)
+            return null;
+
+        var userIdClaim = user.Claims.FirstOrDefault(x => x.Type == "userId")?.Value;
+        var email = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
+        var name = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
+        var lastName = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
+        var role = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value;
+
+        if (userIdClaim == null || email == null || name == null || lastName == null || role == null)
+            return null;
 
         return new Token
         {
-            UserId = claims.First(x => x.Type == "userId").Value,
-            Email = claims.First(x => x.Type == ClaimTypes.Email).Value,
-            Name = claims.First(x => x.Type == ClaimTypes.Name).Value,
-            Role = claims.First(x => x.Type == ClaimTypes.Role).Value,
+            UserId = userIdClaim,
+            Email = email,
+            Name = name,
+            LastName = lastName,
+            Role = role
         };
     }
 
-    public string? GenerateToken(ApplicationUser user, string role, DateTime expiration)
+    public string GenerateToken(User user, string role, DateTime expiration)
     {
         var jwtKey = _config["Jwt:Key"];
         if (string.IsNullOrEmpty(jwtKey))
@@ -37,8 +51,9 @@ public class TokenService(IHttpContextAccessor httpContextAccessor, IConfigurati
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
         var claims = new[]
         {
-            new Claim(ClaimTypes.Email, user.Email ?? ""),
+            new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.Name),
+            new Claim(ClaimTypes.Surname, user.LastName),
             new Claim("userId", user.Id),
             new Claim(ClaimTypes.Role, role)
         };
@@ -53,4 +68,3 @@ public class TokenService(IHttpContextAccessor httpContextAccessor, IConfigurati
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
-

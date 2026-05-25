@@ -16,7 +16,7 @@ public class CartProduct : AuditableEntity
     [Range(1, 100, ErrorMessage = "La cantidad debe estar entre 1 y 100")]
     public int Quantity { get; set; }
 
-    [Column(TypeName = "money")]
+    [Column(TypeName = "numeric(18,2)")]
     public decimal SettedPrice { get; set; }
 
     public virtual Cart Cart { get; set; }

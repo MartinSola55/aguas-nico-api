@@ -15,21 +15,18 @@ public class DealerService(APIContext context, RouteService routeService)
 
     public async Task<BaseResponse<GetDealersResponse>> GetAll()
     {
-        var dealerRole = await _db.Roles.FirstAsync(x => x.Name == Roles.Dealer);
-        var dealerIds = await _db.UserRoles.Where(x => x.RoleId == dealerRole.Id).Select(x => x.UserId).ToListAsync();
-
         return new BaseResponse<GetDealersResponse>
         {
             Data = new GetDealersResponse
             {
                 Items = await _db.User
                     .AsNoTracking()
-                    .Where(x => dealerIds.Contains(x.Id))
+                    .Where(x => x.Role.Name == Roles.Dealer)
                     .Select(x => new DealerItem
                     {
                         Id = x.Id,
                         Name = x.Name,
-                        Email = x.Email ?? "",
+                        Email = x.Email,
                         TruckNumber = x.TruckNumber ?? 0
                     })
                     .OrderBy(x => x.Name)
@@ -45,7 +42,7 @@ public class DealerService(APIContext context, RouteService routeService)
         {
             Id = x.Id,
             Name = x.Name,
-            Email = x.Email ?? "",
+            Email = x.Email,
             TruckNumber = x.TruckNumber ?? 0
         }).FirstOrDefaultAsync();
 
@@ -166,7 +163,7 @@ public class DealerService(APIContext context, RouteService routeService)
                         Address = x.Address,
                         Phone = x.Phone,
                         Email = x.Email ?? "",
-                        DealerId = x.DealerID ?? "",
+                        DealerId = x.DealerID,
                         DealerName = x.Dealer != null ? x.Dealer.Name : "",
                         DeliveryDay = x.DeliveryDay ?? 0,
                         Debt = x.Debt,
@@ -195,7 +192,7 @@ public class DealerService(APIContext context, RouteService routeService)
                 Address = x.Address,
                 Phone = x.Phone,
                 Email = x.Email ?? "",
-                DealerId = x.DealerID ?? "",
+                DealerId = x.DealerID,
                 DealerName = x.Dealer != null ? x.Dealer.Name : "",
                 DeliveryDay = x.DeliveryDay ?? 0,
                 Debt = x.Debt,

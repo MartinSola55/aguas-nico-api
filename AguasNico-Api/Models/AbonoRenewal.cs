@@ -14,7 +14,7 @@ public class AbonoRenewal : AuditableEntity
     [Required]
     public long ClientID { get; set; }
 
-    [Column(TypeName = "money")]
+    [Column(TypeName = "numeric(18,2)")]
     public decimal SettedPrice { get; set; }
 
     public virtual Abono Abono { get; set; }

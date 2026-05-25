@@ -12,7 +12,7 @@ public class Abono : AuditableEntity
     public string Name { get; set; } = null!;
 
     [Required(ErrorMessage = "Debes ingresar un precio")]
-    [Column(TypeName = "money")]
+    [Column(TypeName = "numeric(18,2)")]
     public decimal Price { get; set; }
 
     public virtual List<AbonoProduct> Products { get; set; } = [];

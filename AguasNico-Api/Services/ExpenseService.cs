@@ -156,7 +156,7 @@ public class ExpenseService(APIContext context)
         };
     }
 
-    private async Task<BaseResponse<T>> ValidateExpense<T>(string userId, decimal amount, string? description)
+    private async Task<BaseResponse<T>> ValidateExpense<T>(string userId, decimal amount, string description)
     {
         var rs = new BaseResponse<T>();
         if (string.IsNullOrEmpty(userId) || !await _db.User.AnyAsync(x => x.Id == userId))

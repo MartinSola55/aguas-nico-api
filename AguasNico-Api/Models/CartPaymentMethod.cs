@@ -12,7 +12,7 @@ public class CartPaymentMethod : AuditableEntity
     public short PaymentMethodID { get; set; }
 
     [Required(ErrorMessage = "Debes ingresar un monto")]
-    [Column(TypeName = "money")]
+    [Column(TypeName = "numeric(18,2)")]
     [Range(0, 1000000, ErrorMessage = "Debes ingresar un monto entre $0 y $1.000.000")]
     public decimal Amount { get; set; }
 

@@ -11,7 +11,7 @@ public abstract class AuditableEntity
 
 public static class LocalClock
 {
-    public static DateTime Now => DateTime.UtcNow.AddHours(-3);
+    public static DateTime Now => DateTime.UtcNow;
     public static DateTime Today => Now.Date;
 }
 

@@ -16,12 +16,12 @@ public class Transfer : AuditableEntity
 
     [Required(ErrorMessage = "Debes ingresar un monto")]
     [Range(1, 10000000, ErrorMessage = "El monto debe ser mayor a 0")]
-    [Column(TypeName = "money")]
+    [Column(TypeName = "numeric(18,2)")]
     public decimal Amount { get; set; }
 
     [Required(ErrorMessage = "Debes ingresar una fecha")]
     public DateTime Date { get; set; } = LocalClock.Now;
 
     public virtual Client Client { get; set; }
-    public virtual ApplicationUser User { get; set; }
+    public virtual User User { get; set; }
 }

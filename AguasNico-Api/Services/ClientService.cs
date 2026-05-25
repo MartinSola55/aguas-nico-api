@@ -36,7 +36,7 @@ public class ClientService(APIContext context)
                         Address = x.Address,
                         Phone = x.Phone,
                         Email = x.Email ?? "",
-                        DealerId = x.DealerID ?? "",
+                        DealerId = x.DealerID,
                         DealerName = x.Dealer != null ? x.Dealer.Name : "",
                         DeliveryDay = x.DeliveryDay ?? 0,
                         Debt = x.Debt,
@@ -63,7 +63,7 @@ public class ClientService(APIContext context)
                 Address = x.Address,
                 Phone = x.Phone,
                 Email = x.Email ?? "",
-                DealerId = x.DealerID ?? "",
+                DealerId = x.DealerID,
                 DealerName = x.Dealer != null ? x.Dealer.Name : "",
                 DeliveryDay = x.DeliveryDay ?? 0,
                 Debt = x.Debt,
@@ -193,9 +193,11 @@ public class ClientService(APIContext context)
             if (cart is not null)
                 cart.DeletedAt = LocalClock.Now;
 
-            var route = await _db.Routes
-                .Include(x => x.Carts)
-                .FirstOrDefaultAsync(x => x.UserID == rq.DealerId && x.DayOfWeek == rq.DeliveryDay && x.IsStatic);
+            var route = !string.IsNullOrEmpty(rq.DealerId)
+                ? await _db.Routes
+                    .Include(x => x.Carts)
+                    .FirstOrDefaultAsync(x => x.UserID == rq.DealerId && x.DayOfWeek == rq.DeliveryDay && x.IsStatic)
+                : null;
 
             if (route is not null)
             {
@@ -460,7 +462,7 @@ public class ClientService(APIContext context)
                         Address = x.Address,
                         Phone = x.Phone,
                         Email = x.Email ?? "",
-                        DealerId = x.DealerID ?? "",
+                        DealerId = x.DealerID,
                         DealerName = "",
                         DeliveryDay = x.DeliveryDay ?? 0,
                         Debt = x.Debt,

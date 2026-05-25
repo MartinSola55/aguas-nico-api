@@ -245,7 +245,7 @@ public class AbonoService(APIContext context)
                         Address = x.Client.Address,
                         Phone = x.Client.Phone,
                         Email = x.Client.Email ?? "",
-                        DealerId = x.Client.DealerID ?? "",
+                        DealerId = x.Client.DealerID,
                         DealerName = x.Client.Dealer != null ? x.Client.Dealer.Name : "",
                         DeliveryDay = x.Client.DeliveryDay ?? 0,
                         Debt = x.Client.Debt,

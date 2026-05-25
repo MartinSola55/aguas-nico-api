@@ -1,12 +1,9 @@
-﻿using AguasNico_Api.DAL.DB;
-using AguasNico_Api.DAL.Seeding;
-using AguasNico_Api.Models;
+using AguasNico_Api.DAL;
+using AguasNico_Api.DAL.DB;
+using AguasNico_Api.Helpers.Interceptors;
 using AguasNico_Api.Models.Constants;
-using AguasNico_Api.Security;
 using AguasNico_Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Globalization;
@@ -16,20 +13,18 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("APIContextConnection") ?? throw new InvalidOperationException("Connection string 'APIContextConnection' not found.");
 
 ServiceContainer.AddServices(builder.Services);
-builder.Services.AddScoped<Seeder>();
+builder.Services.AddScoped<MigrationRunner>();
 
-builder.Services.AddDbContext<APIContext>(options => options.UseSqlServer(connectionString));
-builder.Services.AddIdentityCore<ApplicationUser>()
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<APIContext>()
-    .AddSignInManager()
-    .AddDefaultTokenProviders();
+builder.Services.AddDbContext<APIContext>(options =>
+{
+    options.UseNpgsql(connectionString);
+    InterceptorsContainer.AddInterceptors(options);
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddSingleton<IAuthorizationHandler, RolesHandler>();
 
 var key = builder.Configuration["JWT:Key"] ?? throw new InvalidOperationException("JWT key not found.");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -50,8 +45,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(Policies.Admin, policy => policy.Requirements.Add(new AuthorizeRolesAttribute(Roles.Admin)))
-    .AddPolicy(Policies.Dealer, policy => policy.Requirements.Add(new AuthorizeRolesAttribute(Roles.Dealer)));
+    .AddPolicy(Policies.Admin, policy => policy.RequireRole(Roles.Admin))
+    .AddPolicy(Policies.Dealer, policy => policy.RequireRole(Roles.Dealer));
 
 var app = builder.Build();
 
@@ -66,16 +61,16 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors(cors => cors.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
-await Seed();
+await RunMigrations();
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-async Task Seed()
+async Task RunMigrations()
 {
     using var scope = app.Services.CreateScope();
-    var dbSeeder = scope.ServiceProvider.GetRequiredService<Seeder>();
-    await dbSeeder.Seed();
+    var runner = scope.ServiceProvider.GetRequiredService<MigrationRunner>();
+    await runner.Run();
 }

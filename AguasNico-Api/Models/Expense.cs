@@ -12,7 +12,7 @@ public class Expense : AuditableEntity
     public string UserID { get; set; }
 
     [Required(ErrorMessage = "Debes seleccionar un repartidor")]
-    [Column(TypeName = "money")]
+    [Column(TypeName = "numeric(18,2)")]
     [Range(0, 10000000, ErrorMessage = "El monto debe ser mayor a 0")]
     public decimal Amount { get; set; }
 
@@ -20,5 +20,5 @@ public class Expense : AuditableEntity
     [StringLength(200, MinimumLength = 1, ErrorMessage = "Debes ingresar una descripción de menos de 200 caracteres")]
     public string Description { get; set; }
 
-    public virtual ApplicationUser User { get; set; }
+    public virtual User User { get; set; }
 }

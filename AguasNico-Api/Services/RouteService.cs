@@ -547,7 +547,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
             Address = x.Address,
             Phone = x.Phone,
             Email = x.Email ?? "",
-            DealerId = x.DealerID ?? "",
+            DealerId = x.DealerID,
             DealerName = x.Dealer != null ? x.Dealer.Name : "",
             DeliveryDay = x.DeliveryDay ?? 0,
             Debt = x.Debt,

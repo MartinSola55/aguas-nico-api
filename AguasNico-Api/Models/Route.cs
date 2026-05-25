@@ -19,7 +19,7 @@ public class Route : AuditableEntity
     [Column(TypeName = "decimal(18,2)")]
     public decimal DispenserPrice { get; set; }
 
-    public virtual ApplicationUser User { get; set; }
+    public virtual User User { get; set; }
     public virtual List<Cart> Carts { get; set; } = [];
     public virtual List<DispatchedProduct> DispatchedProducts { get; set; } = [];
 }

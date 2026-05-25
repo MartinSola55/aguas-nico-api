@@ -33,7 +33,7 @@ public class Client
     [StringLength(300, MinimumLength = 1, ErrorMessage = "Las notas deben tener menos de 300 caracteres")]
     public string? Notes { get; set; }
 
-    [Column(TypeName = "money")]
+    [Column(TypeName = "numeric(18,2)")]
     [DefaultValue(0)]
     public decimal Debt { get; set; }
 
@@ -59,7 +59,7 @@ public class Client
     [DefaultValue(true)]
     public bool IsActive { get; set; } = true;
 
-    public virtual ApplicationUser Dealer { get; set; }
+    public virtual User Dealer { get; set; }
     public virtual List<ClientProduct> Products { get; set; } = [];
     public virtual List<Cart> Carts { get; set; } = [];
     public virtual List<ClientAbono> Abonos { get; set; } = [];

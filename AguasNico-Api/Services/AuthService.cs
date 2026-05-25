@@ -1,16 +1,16 @@
-﻿using AguasNico_Api.Models;
+using AguasNico_Api.DAL.DB;
 using AguasNico_Api.Models.Constants;
 using AguasNico_Api.Models.DTO;
 using AguasNico_Api.Models.DTO.Auth;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace AguasNico_Api.Services;
 
-public class AuthService(TokenService tokenService, UserManager<ApplicationUser> userManager)
+public class AuthService(TokenService tokenService, APIContext context)
 {
     private readonly TokenService _tokenService = tokenService;
-    private readonly UserManager<ApplicationUser> _userManager = userManager;
+    private readonly APIContext _db = context;
 
     public async Task<BaseResponse<LoginResponse>> Login(LoginRequest rq)
     {
@@ -22,16 +22,20 @@ public class AuthService(TokenService tokenService, UserManager<ApplicationUser>
         if (!new EmailAddressAttribute().IsValid(rq.Email))
             return rs.SetError(Messages.Error.InvalidEmail());
 
-        var user = await _userManager.FindByEmailAsync(rq.Email);
-        if (user == null || !await _userManager.CheckPasswordAsync(user, rq.Password))
+        var email = rq.Email.ToLower();
+        var user = await _db
+            .User
+            .Include(x => x.Role)
+            .FirstOrDefaultAsync(x => x.Email == email);
+
+        if (user == null || !ValidateHashedPassword(rq.Password, user.PasswordHash))
             return rs.SetError(Messages.Error.InvalidLogin());
 
-        var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault();
-        if (role == null)
+        if (user.Role == null)
             return rs.SetError(Messages.Error.UserWithoutRole());
 
-        var expiration = DateTime.Now.AddDays(30);
-        var token = _tokenService.GenerateToken(user, role, expiration);
+        var expiration = DateTime.UtcNow.AddDays(30);
+        var token = _tokenService.GenerateToken(user, user.Role.Name, expiration);
         if (string.IsNullOrEmpty(token))
             return rs.SetError(Messages.Error.TokenCreation());
 
@@ -42,9 +46,10 @@ public class AuthService(TokenService tokenService, UserManager<ApplicationUser>
             User = new LoginResponse.UserItem
             {
                 Id = user.Id,
-                Role = role,
+                Role = user.Role.Name,
                 Name = user.Name,
-                Email = user.Email ?? "",
+                LastName = user.LastName,
+                Email = user.Email,
                 TruckNumber = user.TruckNumber ?? 0
             }
         };
@@ -54,17 +59,33 @@ public class AuthService(TokenService tokenService, UserManager<ApplicationUser>
 
     public BaseResponse Logout()
     {
-        try
-        {
-            _tokenService.GetToken();
-            return new BaseResponse();
-        }
-        catch
-        {
+        if (_tokenService.TryGetToken() == null)
             return new BaseResponse().SetError(Messages.Error.ExpiredToken());
-        }
+
+        return new BaseResponse();
+    }
+
+    public string HashPassword(string password)
+    {
+        return BCrypt.Net.BCrypt.HashPassword(password);
+    }
+
+    public bool ValidatePassword(string password)
+    {
+        return new bool[]
+        {
+            password.Length >= 8,
+            password.Any(char.IsUpper),
+            password.Any(char.IsLower),
+            password.Any(char.IsDigit)
+        }.All(x => x);
     }
 
     public bool IsAdmin() => _tokenService.GetToken().Role == Roles.Admin;
     public bool IsDealer() => _tokenService.GetToken().Role == Roles.Dealer;
+
+    private static bool ValidateHashedPassword(string password, string hashedPassword)
+    {
+        return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
+    }
 }
