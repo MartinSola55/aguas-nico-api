@@ -14,11 +14,12 @@ var connectionString = builder.Configuration.GetConnectionString("APIContextConn
 
 ServiceContainer.AddServices(builder.Services);
 builder.Services.AddScoped<MigrationRunner>();
+InterceptorsContainer.AddInterceptors(builder.Services);
 
-builder.Services.AddDbContext<APIContext>(options =>
+builder.Services.AddDbContext<APIContext>((serviceProvider, options) =>
 {
     options.UseNpgsql(connectionString);
-    InterceptorsContainer.AddInterceptors(options);
+    InterceptorsContainer.ConfigureInterceptors(serviceProvider, options);
 });
 
 builder.Services.AddControllers();
@@ -26,7 +27,10 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
-var key = builder.Configuration["JWT:Key"] ?? throw new InvalidOperationException("JWT key not found.");
+var key = builder.Configuration["Jwt:Key"];
+if (string.IsNullOrWhiteSpace(key))
+    throw new InvalidOperationException("JWT key not found.");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -38,20 +42,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JWT:Issuer"],
-            ValidAudience = builder.Configuration["JWT:Audience"],
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
         };
     });
 
 builder.Services.AddAuthorizationBuilder()
     .AddPolicy(Policies.Admin, policy => policy.RequireRole(Roles.Admin))
-    .AddPolicy(Policies.Dealer, policy => policy.RequireRole(Roles.Dealer));
+    .AddPolicy(Policies.Dealer, policy => policy.RequireRole(Roles.Admin, Roles.Dealer));
 
 var app = builder.Build();
-
-CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("es-ES");
-CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("es-ES");
 
 if (app.Environment.IsDevelopment())
 {
@@ -63,6 +64,7 @@ app.UseCors(cors => cors.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 await RunMigrations();
 
+app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

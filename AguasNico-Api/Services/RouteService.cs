@@ -17,12 +17,14 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
     public async Task<BaseResponse<GetRoutesResponse>> GetAll(GetRoutesRequest rq)
     {
         var token = _tokenService.GetToken();
-        var today = (Day)(int)LocalClock.Now.DayOfWeek;
-        var day = rq.Day == 0 ? today : rq.Day;
 
         var query = _db.Routes.AsNoTracking().AsQueryable();
         if (token.Role == Roles.Admin)
-            query = query.Where(x => x.IsStatic && x.DayOfWeek == day);
+        {
+            query = rq.Day == 0
+                ? query.Where(x => x.IsStatic)
+                : query.Where(x => x.IsStatic && x.DayOfWeek == (Day)rq.Day);
+        }
         else
             query = query.Where(x => x.IsStatic && x.UserID == token.UserId);
 
