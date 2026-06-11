@@ -259,7 +259,7 @@ public class AbonoService(APIContext context)
         };
     }
 
-    private static bool ValidateAbono(string? name, decimal price, out string error)
+    private static bool ValidateAbono(string name, decimal price, out string error)
     {
         error = "";
         if (string.IsNullOrWhiteSpace(name))

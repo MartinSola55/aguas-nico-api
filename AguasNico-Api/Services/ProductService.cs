@@ -229,7 +229,7 @@ public class ProductService(APIContext context)
         return rs;
     }
 
-    private async Task<BaseResponse<T>> ValidateProduct<T>(string? name, decimal price, ProductType type, long id = 0)
+    private async Task<BaseResponse<T>> ValidateProduct<T>(string name, decimal price, ProductType type, long id = 0)
     {
         var rs = new BaseResponse<T>();
 

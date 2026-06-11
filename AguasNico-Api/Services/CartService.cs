@@ -429,7 +429,7 @@ public class CartService(APIContext context)
         }
     }
 
-    private async Task ApplyConfirm(long cartId, long clientId, List<CartProductRequestItem> products, List<CartProductRequestItem> abonoProducts, List<CartPaymentRequestItem> paymentMethods, Cart? newCart = null)
+    private async Task ApplyConfirm(long cartId, long clientId, List<CartProductRequestItem> products, List<CartProductRequestItem> abonoProducts, List<CartPaymentRequestItem> paymentMethods, Cart newCart = null)
     {
         var client = await _db.Clients.Include(x => x.Products).ThenInclude(x => x.Product).FirstOrDefaultAsync(x => x.ID == clientId)
             ?? throw new Exception("No se ha encontrado el cliente");

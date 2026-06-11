@@ -31,7 +31,7 @@ public class Client
     public string Observations { get; set; }
 
     [StringLength(300, MinimumLength = 1, ErrorMessage = "Las notas deben tener menos de 300 caracteres")]
-    public string? Notes { get; set; }
+    public string Notes { get; set; }
 
     [Column(TypeName = "numeric(18,2)")]
     [DefaultValue(0)]
