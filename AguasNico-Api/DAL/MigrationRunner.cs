@@ -1,7 +1,6 @@
 using AguasNico_Api.DAL.DB;
 using AguasNico_Api.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace AguasNico_Api.DAL;
 
@@ -49,7 +48,7 @@ public class MigrationRunner(APIContext db, IConfiguration config)
 
             try
             {
-                await ExecuteMigrationSql(sql, tx);
+                await _db.Database.ExecuteSqlRawAsync(sql);
 
                 _db.Migration.Add(new Migration
                 {
@@ -60,23 +59,12 @@ public class MigrationRunner(APIContext db, IConfiguration config)
                 await _db.SaveChangesAsync();
                 await tx.CommitAsync();
             }
-            catch
+            catch (Exception)
             {
                 await tx.RollbackAsync();
                 throw;
             }
         }
-    }
-
-    private async Task ExecuteMigrationSql(string sql, IDbContextTransaction tx)
-    {
-        var connection = _db.Database.GetDbConnection();
-        await using var command = connection.CreateCommand();
-        command.CommandText = sql;
-        command.CommandTimeout = 0;
-        command.Transaction = tx.GetDbTransaction();
-
-        await command.ExecuteNonQueryAsync();
     }
 
     private async Task EnsureMigrationTableExists()
@@ -92,4 +80,3 @@ public class MigrationRunner(APIContext db, IConfiguration config)
         await _db.Database.ExecuteSqlRawAsync(sql);
     }
 }
-

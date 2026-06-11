@@ -1,12 +1,12 @@
 CREATE TABLE IF NOT EXISTS "Role" (
-    "Id" character varying(450) PRIMARY KEY,
+    "Id" character varying(450) PRIMARY KEY DEFAULT gen_random_uuid(),
     "Name" character varying(50) NOT NULL
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS "IX_Role_Name" ON "Role" ("Name");
 
 CREATE TABLE IF NOT EXISTS "User" (
-    "Id" character varying(450) PRIMARY KEY,
+    "Id" character varying(450) PRIMARY KEY DEFAULT gen_random_uuid(),
     "RoleId" character varying(450) NOT NULL,
     "Name" character varying(100) NOT NULL,
     "LastName" character varying(100) NOT NULL,
