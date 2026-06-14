@@ -1,0 +1,16 @@
+services:
+  aguas-nico-db:
+    image: postgres:16
+    container_name: aguas-nico-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: aguasnico
+    ports:
+      - "5432:5432"
+    volumes:
+      - aguas-nico-db-data:/var/lib/postgresql/data
+
+volumes:
+  aguas-nico-db-data:
+    name: aguas-nico-db-data
