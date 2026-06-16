@@ -24,6 +24,9 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
             query = rq.Day == 0
                 ? query.Where(x => x.IsStatic)
                 : query.Where(x => x.IsStatic && x.DayOfWeek == (Day)rq.Day);
+
+            if (!string.IsNullOrEmpty(rq.UserId))
+                query = query.Where(x => x.UserID == rq.UserId);
         }
         else
             query = query.Where(x => x.IsStatic && x.UserID == token.UserId);
