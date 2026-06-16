@@ -503,13 +503,13 @@ public class ClientService(APIContext context)
         var abonos = await _db.Abonos.AsNoTracking().ToListAsync();
         var clientAbonos = await _db.ClientAbonos.AsNoTracking().Where(x => x.ClientID == clientId).ToListAsync();
 
-        return abonos.Select(x => new ClientAbonoItem
+        return [.. abonos.Select(x => new ClientAbonoItem
         {
             AbonoId = x.ID,
             AbonoName = x.Name,
             Price = x.Price,
             Assigned = clientAbonos.Any(y => y.AbonoID == x.ID)
-        }).ToList();
+        })];
     }
 
     private async Task<List<ProductHistoryItem>> GetProductsHistoryItems(long clientId)
@@ -556,7 +556,7 @@ public class ClientService(APIContext context)
             })
             .ToListAsync();
 
-        return soldProducts.Concat(abonoProducts).Concat(returnedProducts).ToList();
+        return [.. soldProducts.Concat(abonoProducts).Concat(returnedProducts).OrderByDescending(x => x.Date)];
     }
 
     private async Task<List<CartsTransfersHistoryItem>> GetCartsTransfersHistory(long clientId)
@@ -614,7 +614,7 @@ public class ClientService(APIContext context)
             })
             .ToListAsync();
 
-        return transfers.Concat(abonos).Concat(carts).ToList();
+        return [.. transfers.Concat(abonos).Concat(carts).OrderByDescending(x => x.Date)];
     }
 
     private async Task<BaseResponse<T>> ValidateClient<T>(CreateClientRequest rq)

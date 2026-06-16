@@ -25,6 +25,7 @@ public class RouteCartItem
     public long ClientId { get; set; }
     public string ClientName { get; set; }
     public string ClientAddress { get; set; }
+    public decimal ClientDebt { get; set; }
     public int Priority { get; set; }
     public State State { get; set; }
     public decimal Collected { get; set; }

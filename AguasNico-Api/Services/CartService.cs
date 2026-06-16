@@ -43,6 +43,7 @@ public class CartService(APIContext context)
         var cartAbonoProducts = await _db.CartAbonoProducts.AsNoTracking().Where(x => x.CartID == cart.ID).ToListAsync();
         var returnedProducts = await _db.ReturnedProducts.AsNoTracking().Where(x => x.CartID == cart.ID).ToListAsync();
         var selectedPaymentMethods = await _db.CartPaymentMethods.AsNoTracking().Where(x => x.CartID == cart.ID).ToListAsync();
+        var paymentMethods = await _db.PaymentMethods.AsNoTracking().ToListAsync();
 
         var abonoTypes = await _db.ClientAbonos
             .AsNoTracking()
@@ -90,16 +91,17 @@ public class CartService(APIContext context)
                     Quantity = selected?.Quantity ?? 0
                 };
             })],
-            PaymentMethods = await _db.PaymentMethods
-                .AsNoTracking()
-                .Select(x => new GetCartForEditResponse.PaymentMethodOptionItem
+            PaymentMethods = [.. paymentMethods.Select(x =>
+            {
+                var selected = selectedPaymentMethods.FirstOrDefault(p => p.PaymentMethodID == x.ID);
+                return new GetCartForEditResponse.PaymentMethodOptionItem
                 {
                     Id = x.ID,
                     Name = x.Name,
-                    Selected = selectedPaymentMethods.Any(p => p.PaymentMethodID == x.ID),
-                    Amount = selectedPaymentMethods.Where(p => p.PaymentMethodID == x.ID).Select(p => p.Amount).FirstOrDefault()
-                })
-                .ToListAsync()
+                    Selected = selected != null,
+                    Amount = selected?.Amount ?? 0
+                };
+            })]
         };
 
         return rs;

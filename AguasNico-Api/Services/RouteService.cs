@@ -68,6 +68,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
                     ClientId = c.ClientID,
                     ClientName = c.Client.Name,
                     ClientAddress = c.Client.Address,
+                    ClientDebt = c.Client.Debt,
                     Priority = c.Priority,
                     State = c.State,
                     Collected = c.PaymentMethods.Sum(p => p.Amount)
