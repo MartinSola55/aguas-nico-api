@@ -48,7 +48,6 @@ public class AuthService(TokenService tokenService, APIContext context)
                 Id = user.Id,
                 Role = user.Role.Name,
                 Name = user.Name,
-                LastName = user.LastName,
                 Email = user.Email,
                 TruckNumber = user.TruckNumber ?? 0
             }

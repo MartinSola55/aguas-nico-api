@@ -25,10 +25,9 @@ public class TokenService(IHttpContextAccessor httpContextAccessor, IConfigurati
         var userIdClaim = user.Claims.FirstOrDefault(x => x.Type == "userId")?.Value;
         var email = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
         var name = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
-        var lastName = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Surname)?.Value;
         var role = user.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Role)?.Value;
 
-        if (userIdClaim == null || email == null || name == null || lastName == null || role == null)
+        if (userIdClaim == null || email == null || name == null || role == null)
             return null;
 
         return new Token
@@ -36,7 +35,6 @@ public class TokenService(IHttpContextAccessor httpContextAccessor, IConfigurati
             UserId = userIdClaim,
             Email = email,
             Name = name,
-            LastName = lastName,
             Role = role
         };
     }
@@ -53,7 +51,6 @@ public class TokenService(IHttpContextAccessor httpContextAccessor, IConfigurati
         {
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.Name, user.Name),
-            new Claim(ClaimTypes.Surname, user.LastName),
             new Claim("userId", user.Id),
             new Claim(ClaimTypes.Role, role)
         };
