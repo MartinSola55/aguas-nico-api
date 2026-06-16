@@ -322,7 +322,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
     public async Task<BaseResponse<ClientsNotInRouteResponse>> ClientsByNameNotInRoute(ClientsByNameNotInRouteRequest rq)
     {
         var clients = await ClientsNotInRouteQuery(rq.RouteId)
-            .Where(x => x.Name.Contains(rq.Name) || x.Address.Contains(rq.Name))
+            .Where(x => x.Name.ToLower().Contains(rq.Name.ToLower()) || x.Address.ToLower().Contains(rq.Name.ToLower()))
             .ToListAsync();
 
         return new BaseResponse<ClientsNotInRouteResponse>
