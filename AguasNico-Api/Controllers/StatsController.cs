@@ -25,5 +25,8 @@ public class StatsController(StatsService statsService) : BaseController
     public async Task<BaseResponse<GetProductsSoldResponse>> GetProductsSold([FromQuery] GetProductsSoldRequest rq) => await _statsService.GetProductsSold(rq);
 
     [HttpGet]
+    public async Task<BaseResponse<GetProductsSoldByDealerResponse>> GetProductsSoldByDealer([FromQuery] GetProductsSoldByDealerRequest rq) => await _statsService.GetProductsSoldByDealer(rq);
+
+    [HttpGet]
     public async Task<BaseResponse<GetBalanceByDateResponse>> GetBalanceByDate([FromQuery] GetBalanceByDateRequest rq) => await _statsService.GetBalanceByDate(rq);
 }
