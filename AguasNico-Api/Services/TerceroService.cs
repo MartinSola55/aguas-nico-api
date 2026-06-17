@@ -46,7 +46,7 @@ public class TerceroService(APIContext context)
 
         var tercero = new Tercero
         {
-            Date = rq.Date == default ? LocalClock.Today : rq.Date.Date,
+            Date = rq.Date.Date,
             Name = rq.Name.Trim(),
             SodaQuantity = rq.SodaQuantity,
             SodaAmount = rq.SodaAmount,
