@@ -97,6 +97,41 @@ public class StatsService(APIContext context)
         };
     }
 
+    public async Task<BaseResponse<GetProductsSoldByDealerResponse>> GetProductsSoldByDealer(GetProductsSoldByDealerRequest rq)
+    {
+        var query = _db.CartProducts
+            .AsNoTracking()
+            .Where(x => x.Cart.CreatedAt.Date >= rq.StartDate.Date && x.Cart.CreatedAt.Date <= rq.EndDate.Date);
+
+        if (!string.IsNullOrEmpty(rq.DealerId))
+            query = query.Where(x => x.Cart.Route.UserID == rq.DealerId);
+
+        var raw = await query
+            .GroupBy(x => new { x.Cart.Route.UserID, x.Cart.Route.User.Name, x.Type })
+            .Select(g => new { g.Key.UserID, g.Key.Name, g.Key.Type, Quantity = g.Sum(y => y.Quantity) })
+            .ToListAsync();
+
+        var items = raw
+            .GroupBy(x => new { x.UserID, x.Name })
+            .Select(g => new DealerProductsSoldItem
+            {
+                DealerId = g.Key.UserID,
+                DealerName = g.Key.Name,
+                Quantity = g.Sum(y => y.Quantity),
+                Products = g
+                    .Select(y => new ProductSoldItem { Type = y.Type.GetDisplayName(), Quantity = y.Quantity })
+                    .OrderByDescending(p => p.Quantity)
+                    .ToList()
+            })
+            .OrderByDescending(x => x.Quantity)
+            .ToList();
+
+        return new BaseResponse<GetProductsSoldByDealerResponse>
+        {
+            Data = new GetProductsSoldByDealerResponse { Items = items }
+        };
+    }
+
     public async Task<BaseResponse<GetBalanceByDateResponse>> GetBalanceByDate(GetBalanceByDateRequest rq)
     {
         var cartPaymentMethods = await _db.CartPaymentMethods.Where(x => x.CreatedAt.Date == rq.Date.Date).SumAsync(x => x.Amount);

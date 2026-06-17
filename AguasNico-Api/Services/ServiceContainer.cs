@@ -18,6 +18,8 @@ public static class ServiceContainer
         services.AddScoped<InvoiceService>();
         services.AddScoped<HomeService>();
         services.AddScoped<CatalogService>();
+        services.AddScoped<TerceroService>();
+        services.AddScoped<CajaService>();
     }
 }
 

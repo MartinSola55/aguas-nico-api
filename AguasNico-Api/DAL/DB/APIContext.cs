@@ -40,6 +40,7 @@ public class APIContext(DbContextOptions<APIContext> options) : DbContext(option
         builder.Entity<AbonoRenewalProduct>().HasQueryFilter(entity => entity.DeletedAt == null);
         builder.Entity<CartAbonoProduct>().HasQueryFilter(entity => entity.DeletedAt == null);
         builder.Entity<User>().HasQueryFilter(entity => entity.DeletedAt == null);
+        builder.Entity<Tercero>().HasQueryFilter(entity => entity.DeletedAt == null);
     }
 
     public DbSet<Migration> Migration { get; set; }
@@ -63,4 +64,5 @@ public class APIContext(DbContextOptions<APIContext> options) : DbContext(option
     public DbSet<DispatchedProduct> DispatchedProducts { get; set; }
     public DbSet<Models.Route> Routes { get; set; }
     public DbSet<Transfer> Transfers { get; set; }
+    public DbSet<Tercero> Terceros { get; set; }
 }

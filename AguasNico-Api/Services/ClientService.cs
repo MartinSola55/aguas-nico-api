@@ -18,7 +18,11 @@ public class ClientService(APIContext context)
         if (rq.ActiveOnly)
             query = query.Where(x => x.IsActive);
         if (!string.IsNullOrWhiteSpace(rq.Search))
-            query = query.Where(x => x.Name.ToLower().Contains(rq.Search.ToLower()) || x.Address.ToLower().Contains(rq.Search.ToLower()));
+        {
+            var search = rq.Search.ToLower();
+            var isNumeric = long.TryParse(rq.Search, out var searchId);
+            query = query.Where(x => x.Name.ToLower().Contains(search) || x.Address.ToLower().Contains(search) || (isNumeric && x.ID == searchId));
+        }
         if (!string.IsNullOrEmpty(rq.DealerId))
             query = query.Where(x => x.DealerID == rq.DealerId);
         if (rq.DeliveryDay != 0)

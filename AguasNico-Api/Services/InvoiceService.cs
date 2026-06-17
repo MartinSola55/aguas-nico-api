@@ -224,12 +224,14 @@ public class InvoiceService(APIContext context)
         var query = _db.Clients
             .AsNoTracking()
             .Where(x =>
-                x.DealerID == invoiceDealer &&
                 x.IsActive &&
                 x.HasInvoice &&
                 x.InvoiceType.HasValue &&
                 x.TaxCondition.HasValue &&
                 !string.IsNullOrEmpty(x.CUIT));
+
+        if (!string.IsNullOrEmpty(invoiceDealer))
+            query = query.Where(x => x.DealerID == invoiceDealer);
 
         if (invoiceDay.HasValue && Enum.IsDefined(invoiceDay.Value))
             query = query.Where(x => x.DeliveryDay == invoiceDay.Value);
