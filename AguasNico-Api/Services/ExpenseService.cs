@@ -36,6 +36,7 @@ public class ExpenseService(APIContext context)
                         CreatedAt = x.CreatedAt
                     })
                     .OrderByDescending(x => x.CreatedAt)
+                    .ThenByDescending(x => x.Amount)
                     .ToListAsync()
             }
         };
@@ -150,7 +151,7 @@ public class ExpenseService(APIContext context)
                         Description = x.Description,
                         Amount = x.Amount
                     })
-                    .OrderBy(x => x.Description)
+                    .OrderByDescending(x => x.Amount)
                     .ToListAsync()
             }
         };
