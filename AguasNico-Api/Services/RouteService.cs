@@ -81,22 +81,26 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
         if ((route.UserId != token.UserId && token.Role != Roles.Admin) || (route.IsStatic && token.Role != Roles.Admin))
             return rs.SetError(Messages.Error.Unauthorized(), 403);
 
-        route.TotalExpenses = await _db.Expenses.Where(x => x.CreatedAt.Date == route.CreatedAt.Date && x.UserID == route.UserId).SumAsync(x => x.Amount);
-        route.TotalSold = await GetTotalSoldByRoute(route.Id);
-        route.SoldProducts = await GetSoldProductsByRoute(route.Id);
-        route.Payments = await GetTotalCollected(route.Id);
-        route.Transfers = await _db.Transfers
-            .AsNoTracking()
-            .Where(x => x.UserID == route.UserId && x.Date.Date == route.CreatedAt.Date)
-            .Select(x => new Models.DTO.Routes.TransferItem
-            {
-                Id = x.ID,
-                ClientId = x.ClientID,
-                ClientName = x.Client.Name,
-                Amount = x.Amount,
-                Date = x.Date
-            })
-            .ToListAsync();
+        // Dealers see just the carts
+        if (token.Role == Roles.Admin)
+        {
+            route.TotalExpenses = await _db.Expenses.Where(x => x.CreatedAt.Date == route.CreatedAt.Date && x.UserID == route.UserId).SumAsync(x => x.Amount);
+            route.TotalSold = await GetTotalSoldByRoute(route.Id);
+            route.SoldProducts = await GetSoldProductsByRoute(route.Id);
+            route.Payments = await GetTotalCollected(route.Id);
+            route.Transfers = await _db.Transfers
+                .AsNoTracking()
+                .Where(x => x.UserID == route.UserId && x.Date.Date == route.CreatedAt.Date)
+                .Select(x => new Models.DTO.Routes.TransferItem
+                {
+                    Id = x.ID,
+                    ClientId = x.ClientID,
+                    ClientName = x.Client.Name,
+                    Amount = x.Amount,
+                    Date = x.Date
+                })
+                .ToListAsync();
+        }
 
         rs.Data = route;
         return rs;
@@ -276,12 +280,16 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
 
     public async Task<BaseResponse<GetRoutesResponse>> SearchByDate(SearchRoutesByDateRequest rq)
     {
+        var routes = await ProjectRoutes(_db.Routes.AsNoTracking().Where(x => x.CreatedAt.Date == rq.Date.Date && !x.IsStatic)).ToListAsync();
+        foreach (var route in routes)
+        {
+            route.Collected = await GetTotalSoldByRoute(route.Id);
+            route.SoldProducts = await GetSoldProductsByRoute(route.Id, onlySold: true);
+        }
+
         return new BaseResponse<GetRoutesResponse>
         {
-            Data = new GetRoutesResponse
-            {
-                Routes = await ProjectRoutes(_db.Routes.AsNoTracking().Where(x => x.CreatedAt.Date == rq.Date.Date && !x.IsStatic)).ToListAsync()
-            }
+            Data = new GetRoutesResponse { Routes = routes }
         };
     }
 
@@ -419,7 +427,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
     {
         var rs = new BaseResponse<ManualCartDataResponse>();
         var route = await ProjectRoutes(_db.Routes.AsNoTracking().Where(x => x.ID == rq.RouteId)).FirstOrDefaultAsync();
-        if (route == null)
+        if (route == null || route.IsStatic)
             return rs.SetError(Messages.Error.EntityNotFound("Planilla", true));
 
         rs.Data = new ManualCartDataResponse
@@ -472,13 +480,16 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
             _db.ReturnedProducts.Where(x => x.CreatedAt.Date == date.Date && x.Cart.RouteID == routeId));
     }
 
-    public async Task<List<SoldProductsItem>> GetSoldProductsByRoute(long routeId)
+    public async Task<List<SoldProductsItem>> GetSoldProductsByRoute(long routeId, bool onlySold = false)
     {
         var sold = await BuildSoldProducts(
             _db.CartProducts.Where(x => x.Cart.RouteID == routeId),
             _db.CartAbonoProducts.Where(x => x.Cart.RouteID == routeId),
             _db.DispatchedProducts.Where(x => x.RouteID == routeId),
             _db.ReturnedProducts.Where(x => x.Cart.RouteID == routeId));
+
+        if (onlySold)
+            sold = [.. sold.Where(x => x.Sold > 0)];
 
         var clientStock = await _db.Carts
             .Where(x => x.RouteID == routeId)

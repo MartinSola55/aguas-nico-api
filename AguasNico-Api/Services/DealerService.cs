@@ -29,7 +29,7 @@ public class DealerService(APIContext context, RouteService routeService)
                         Email = x.Email,
                         TruckNumber = x.TruckNumber ?? 0
                     })
-                    .OrderBy(x => x.Name)
+                    .OrderBy(x => x.TruckNumber)
                     .ToListAsync()
             }
         };
@@ -83,6 +83,7 @@ public class DealerService(APIContext context, RouteService routeService)
         var staticCarts = await _db.Carts
             .AsNoTracking()
             .Where(x => x.Route.UserID == rq.DealerId && x.IsStatic && x.Client.IsActive)
+            .OrderBy(x => x.Priority)
             .Select(x => new
             {
                 Day = x.Route.DayOfWeek,
@@ -117,7 +118,7 @@ public class DealerService(APIContext context, RouteService routeService)
                 ClientAddress = cart.ClientAddress,
                 ClientObservations = cart.ClientObservations,
                 ClientDebt = cart.ClientDebt,
-                Products = cart.OnlyAbonos ? [] : [.. cart.Products.Select(p => new DealerSheetItem.ProductSheetItem
+                Products = cart.OnlyAbonos ? [] : [.. cart.Products.OrderByDescending(p => p.Type).Select(p => new DealerSheetItem.ProductSheetItem
                 {
                     Type = p.Type,
                     TypeName = p.Type.GetDisplayName(),

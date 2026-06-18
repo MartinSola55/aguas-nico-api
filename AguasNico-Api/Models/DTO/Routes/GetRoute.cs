@@ -12,7 +12,6 @@ public class GetRouteRequest
 public class GetRouteResponse : RouteItem
 {
     public List<RouteCartItem> Carts { get; set; } = [];
-    public List<SoldProductsItem> SoldProducts { get; set; } = [];
     public List<PaymentAmountItem> Payments { get; set; } = [];
     public List<TransferItem> Transfers { get; set; } = [];
     public decimal TotalSold { get; set; }

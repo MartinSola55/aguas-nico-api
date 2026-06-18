@@ -7,26 +7,30 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AguasNico_Api.Controllers;
 
-[Authorize(Policy = Policies.Admin)]
 public class ExpenseController(ExpenseService expenseService) : BaseController
 {
     private readonly ExpenseService _expenseService = expenseService;
 
     [HttpPost]
+    [Authorize(Policy = Policies.Admin)]
     public async Task<BaseResponse<GetExpensesResponse>> GetAll([FromBody] GetExpensesRequest rq) => await _expenseService.GetAll(rq);
 
     [HttpGet]
+    [Authorize(Policy = Policies.Admin)]
     public async Task<BaseResponse<GetExpenseResponse>> GetOne([FromQuery] GetExpenseRequest rq) => await _expenseService.GetOne(rq);
 
     [HttpPost]
     public async Task<BaseResponse<CreateExpenseResponse>> Create([FromBody] CreateExpenseRequest rq) => await _expenseService.Create(rq);
 
     [HttpPost]
+    [Authorize(Policy = Policies.Admin)]
     public async Task<BaseResponse<UpdateExpenseResponse>> Update([FromBody] UpdateExpenseRequest rq) => await _expenseService.Update(rq);
 
     [HttpPost]
+    [Authorize(Policy = Policies.Admin)]
     public async Task<BaseResponse> Delete([FromBody] DeleteExpenseRequest rq) => await _expenseService.Delete(rq);
 
     [HttpGet]
+    [Authorize(Policy = Policies.Admin)]
     public async Task<BaseResponse<SearchExpenseByDateResponse>> SearchByDate([FromQuery] SearchExpenseByDateRequest rq) => await _expenseService.SearchByDate(rq);
 }

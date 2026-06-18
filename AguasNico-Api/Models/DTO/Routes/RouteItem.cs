@@ -1,4 +1,5 @@
 ﻿using AguasNico_Api.Models.Constants;
+using AguasNico_Api.Models.DTO.Common;
 namespace AguasNico_Api.Models.DTO.Routes;
 
 public class RouteItem
@@ -15,6 +16,8 @@ public class RouteItem
     public int TotalCarts { get; set; }
     public int CompletedCarts { get; set; }
     public int PendingCarts { get; set; }
+    public decimal Collected { get; set; }
+    public List<SoldProductsItem> SoldProducts { get; set; } = [];
 }
 
 
