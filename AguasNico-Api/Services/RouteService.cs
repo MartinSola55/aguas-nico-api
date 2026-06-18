@@ -276,12 +276,16 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
 
     public async Task<BaseResponse<GetRoutesResponse>> SearchByDate(SearchRoutesByDateRequest rq)
     {
+        var routes = await ProjectRoutes(_db.Routes.AsNoTracking().Where(x => x.CreatedAt.Date == rq.Date.Date && !x.IsStatic)).ToListAsync();
+        foreach (var route in routes)
+        {
+            route.Collected = await GetTotalSoldByRoute(route.Id);
+            route.SoldProducts = await GetSoldProductsByRoute(route.Id, onlySold: true);
+        }
+
         return new BaseResponse<GetRoutesResponse>
         {
-            Data = new GetRoutesResponse
-            {
-                Routes = await ProjectRoutes(_db.Routes.AsNoTracking().Where(x => x.CreatedAt.Date == rq.Date.Date && !x.IsStatic)).ToListAsync()
-            }
+            Data = new GetRoutesResponse { Routes = routes }
         };
     }
 
@@ -472,13 +476,16 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
             _db.ReturnedProducts.Where(x => x.CreatedAt.Date == date.Date && x.Cart.RouteID == routeId));
     }
 
-    public async Task<List<SoldProductsItem>> GetSoldProductsByRoute(long routeId)
+    public async Task<List<SoldProductsItem>> GetSoldProductsByRoute(long routeId, bool onlySold = false)
     {
         var sold = await BuildSoldProducts(
             _db.CartProducts.Where(x => x.Cart.RouteID == routeId),
             _db.CartAbonoProducts.Where(x => x.Cart.RouteID == routeId),
             _db.DispatchedProducts.Where(x => x.RouteID == routeId),
             _db.ReturnedProducts.Where(x => x.Cart.RouteID == routeId));
+
+        if (onlySold)
+            sold = [.. sold.Where(x => x.Sold > 0)];
 
         var clientStock = await _db.Carts
             .Where(x => x.RouteID == routeId)
