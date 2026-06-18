@@ -89,6 +89,7 @@ public class StatsService(APIContext context)
                 Type = type.GetDisplayName(),
                 Quantity = products.FirstOrDefault(x => x.Type == type)?.Quantity ?? 0
             })
+            .OrderBy(x => x.Type)
             .ToList();
 
         return new BaseResponse<GetProductsSoldResponse>
