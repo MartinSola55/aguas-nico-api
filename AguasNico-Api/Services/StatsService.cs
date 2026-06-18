@@ -17,7 +17,7 @@ public class StatsService(APIContext context)
         {
             Data = new GetYearsResponse
             {
-                Years = await _db.Routes.AsNoTracking().Select(x => x.CreatedAt.Year).Distinct().ToListAsync()
+                Years = await _db.Routes.AsNoTracking().Select(x => x.CreatedAt.Year).Distinct().OrderByDescending(x => x).ToListAsync()
             }
         };
     }
