@@ -44,6 +44,7 @@ public class RouteController(RouteService routeService) : BaseController
     public async Task<BaseResponse<GetRoutesResponse>> SearchByDay([FromQuery] SearchRoutesByDayRequest rq) => await _routeService.SearchByDay(rq);
 
     [HttpGet]
+    [Authorize(Policy = Policies.Admin)]
     public async Task<BaseResponse<SearchSoldProductsResponse>> SearchSoldProducts([FromQuery] SearchSoldProductsRequest rq) => await _routeService.SearchSoldProducts(rq);
 
     [HttpGet]

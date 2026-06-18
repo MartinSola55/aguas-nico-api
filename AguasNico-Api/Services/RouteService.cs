@@ -81,22 +81,26 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
         if ((route.UserId != token.UserId && token.Role != Roles.Admin) || (route.IsStatic && token.Role != Roles.Admin))
             return rs.SetError(Messages.Error.Unauthorized(), 403);
 
-        route.TotalExpenses = await _db.Expenses.Where(x => x.CreatedAt.Date == route.CreatedAt.Date && x.UserID == route.UserId).SumAsync(x => x.Amount);
-        route.TotalSold = await GetTotalSoldByRoute(route.Id);
-        route.SoldProducts = await GetSoldProductsByRoute(route.Id);
-        route.Payments = await GetTotalCollected(route.Id);
-        route.Transfers = await _db.Transfers
-            .AsNoTracking()
-            .Where(x => x.UserID == route.UserId && x.Date.Date == route.CreatedAt.Date)
-            .Select(x => new Models.DTO.Routes.TransferItem
-            {
-                Id = x.ID,
-                ClientId = x.ClientID,
-                ClientName = x.Client.Name,
-                Amount = x.Amount,
-                Date = x.Date
-            })
-            .ToListAsync();
+        // Dealers see just the carts
+        if (token.Role == Roles.Admin)
+        {
+            route.TotalExpenses = await _db.Expenses.Where(x => x.CreatedAt.Date == route.CreatedAt.Date && x.UserID == route.UserId).SumAsync(x => x.Amount);
+            route.TotalSold = await GetTotalSoldByRoute(route.Id);
+            route.SoldProducts = await GetSoldProductsByRoute(route.Id);
+            route.Payments = await GetTotalCollected(route.Id);
+            route.Transfers = await _db.Transfers
+                .AsNoTracking()
+                .Where(x => x.UserID == route.UserId && x.Date.Date == route.CreatedAt.Date)
+                .Select(x => new Models.DTO.Routes.TransferItem
+                {
+                    Id = x.ID,
+                    ClientId = x.ClientID,
+                    ClientName = x.Client.Name,
+                    Amount = x.Amount,
+                    Date = x.Date
+                })
+                .ToListAsync();
+        }
 
         rs.Data = route;
         return rs;
@@ -423,7 +427,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
     {
         var rs = new BaseResponse<ManualCartDataResponse>();
         var route = await ProjectRoutes(_db.Routes.AsNoTracking().Where(x => x.ID == rq.RouteId)).FirstOrDefaultAsync();
-        if (route == null)
+        if (route == null || route.IsStatic)
             return rs.SetError(Messages.Error.EntityNotFound("Planilla", true));
 
         rs.Data = new ManualCartDataResponse
