@@ -27,7 +27,8 @@ public class DealerService(APIContext context, RouteService routeService)
                         Id = x.Id,
                         Name = x.Name,
                         Email = x.Email,
-                        TruckNumber = x.TruckNumber ?? 0
+                        TruckNumber = x.TruckNumber ?? 0,
+                        ClientsCount = _db.Clients.Count(c => c.DealerID == x.Id && c.IsActive && c.DeliveryDay != null)
                     })
                     .OrderBy(x => x.TruckNumber)
                     .ToListAsync()

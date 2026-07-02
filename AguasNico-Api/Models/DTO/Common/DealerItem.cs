@@ -6,6 +6,7 @@ public class DealerItem
     public string Name { get; set; }
     public string Email { get; set; }
     public int TruckNumber { get; set; }
+    public int ClientsCount { get; set; }
 }
 
 

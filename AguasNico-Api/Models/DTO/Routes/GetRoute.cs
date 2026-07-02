@@ -28,6 +28,8 @@ public class RouteCartItem
     public int Priority { get; set; }
     public State State { get; set; }
     public decimal Collected { get; set; }
+    public List<ProductType> ProductTypes { get; set; } = [];
+    public List<ProductType> AbonoTypes { get; set; } = [];
 }
 
 public class TransferItem

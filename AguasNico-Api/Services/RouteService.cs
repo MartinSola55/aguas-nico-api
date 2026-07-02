@@ -11,15 +11,13 @@ namespace AguasNico_Api.Services;
 public class RouteService(APIContext context, TokenService tokenService, CartService cartService)
 {
     private readonly APIContext _db = context;
-    private readonly TokenService _tokenService = tokenService;
+    private readonly Token _token = tokenService.GetToken();
     private readonly CartService _cartService = cartService;
 
     public async Task<BaseResponse<GetRoutesResponse>> GetAll(GetRoutesRequest rq)
     {
-        var token = _tokenService.GetToken();
-
         var query = _db.Routes.AsNoTracking().AsQueryable();
-        if (token.Role == Roles.Admin)
+        if (_token.Role == Roles.Admin)
         {
             query = rq.Day == 0
                 ? query.Where(x => x.IsStatic)
@@ -29,7 +27,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
                 query = query.Where(x => x.UserID == rq.UserId);
         }
         else
-            query = query.Where(x => x.IsStatic && x.UserID == token.UserId);
+            query = query.Where(x => x.IsStatic && x.UserID == _token.UserId);
 
         return new BaseResponse<GetRoutesResponse>
         {
@@ -43,7 +41,6 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
     public async Task<BaseResponse<GetRouteResponse>> GetOne(GetRouteRequest rq)
     {
         var rs = new BaseResponse<GetRouteResponse>();
-        var token = _tokenService.GetToken();
 
         var route = await _db.Routes
             .AsNoTracking()
@@ -71,18 +68,20 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
                     ClientDebt = c.Client.Debt,
                     Priority = c.Priority,
                     State = c.State,
-                    Collected = c.PaymentMethods.Sum(p => p.Amount)
+                    Collected = c.PaymentMethods.Sum(p => p.Amount),
+                    ProductTypes = c.Products.GroupBy(p => p.Type).Select(x => x.Key).ToList(),
+                    AbonoTypes = c.AbonoProducts.GroupBy(p => p.Type).Select(x => x.Key).ToList()
                 }).ToList()
             })
             .FirstOrDefaultAsync();
 
         if (route == null)
             return rs.SetError(Messages.Error.EntityNotFound("Planilla", true));
-        if ((route.UserId != token.UserId && token.Role != Roles.Admin) || (route.IsStatic && token.Role != Roles.Admin))
+        if ((route.UserId != _token.UserId && _token.Role != Roles.Admin) || (route.IsStatic && _token.Role != Roles.Admin))
             return rs.SetError(Messages.Error.Unauthorized(), 403);
 
         // Dealers see just the carts
-        if (token.Role == Roles.Admin)
+        if (_token.Role == Roles.Admin)
         {
             route.TotalExpenses = await _db.Expenses.Where(x => x.CreatedAt.Date == route.CreatedAt.Date && x.UserID == route.UserId).SumAsync(x => x.Amount);
             route.TotalSold = await GetTotalSoldByRoute(route.Id);
@@ -295,12 +294,11 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
 
     public async Task<BaseResponse<GetRoutesResponse>> SearchByDay(SearchRoutesByDayRequest rq)
     {
-        var token = _tokenService.GetToken();
         var query = _db.Routes.AsNoTracking().AsQueryable();
-        if (token.Role == Roles.Admin)
+        if (_token.Role == Roles.Admin)
             query = query.Where(x => x.DayOfWeek == rq.Day && x.IsStatic);
         else
-            query = query.Where(x => x.DayOfWeek == rq.Day && !x.IsStatic && x.UserID == token.UserId);
+            query = query.Where(x => x.DayOfWeek == rq.Day && !x.IsStatic && x.UserID == _token.UserId);
 
         return new BaseResponse<GetRoutesResponse>
         {
