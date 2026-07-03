@@ -1,4 +1,6 @@
 ﻿using AguasNico_Api.Models.Constants;
+using AguasNico_Api.Models.DTO.Carts;
+using AguasNico_Api.Models.DTO.Clients;
 using AguasNico_Api.Models.DTO.Common;
 
 
@@ -28,8 +30,11 @@ public class RouteCartItem
     public int Priority { get; set; }
     public State State { get; set; }
     public decimal Collected { get; set; }
-    public List<ProductType> ProductTypes { get; set; } = [];
-    public List<ProductType> AbonoTypes { get; set; } = [];
+    public List<ProductQuantityItem> Products { get; set; } = [];
+    public List<ProductQuantityItem> AbonoProducts { get; set; } = [];
+    public List<GetCartForEditResponse.PaymentMethodOptionItem> PaymentMethods { get; set; } = [];
+    public List<GetProductsAndAbonoResponse.ProductOptionItem> AvailableProducts { get; set; } = [];
+    public List<GetProductsAndAbonoResponse.AbonoProductOptionItem> AvailableAbonoProducts { get; set; } = [];
 }
 
 public class TransferItem

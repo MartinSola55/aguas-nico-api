@@ -2,6 +2,8 @@
 using AguasNico_Api.Models;
 using AguasNico_Api.Models.Constants;
 using AguasNico_Api.Models.DTO;
+using AguasNico_Api.Models.DTO.Carts;
+using AguasNico_Api.Models.DTO.Clients;
 using AguasNico_Api.Models.DTO.Common;
 using AguasNico_Api.Models.DTO.Routes;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
     private readonly Token _token = tokenService.GetToken();
     private readonly CartService _cartService = cartService;
 
+    #region Methods
     public async Task<BaseResponse<GetRoutesResponse>> GetAll(GetRoutesRequest rq)
     {
         var query = _db.Routes.AsNoTracking().AsQueryable();
@@ -68,9 +71,7 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
                     ClientDebt = c.Client.Debt,
                     Priority = c.Priority,
                     State = c.State,
-                    Collected = c.PaymentMethods.Sum(p => p.Amount),
-                    ProductTypes = c.Products.GroupBy(p => p.Type).Select(x => x.Key).ToList(),
-                    AbonoTypes = c.AbonoProducts.GroupBy(p => p.Type).Select(x => x.Key).ToList()
+                    Collected = c.PaymentMethods.Sum(p => p.Amount)
                 }).ToList()
             })
             .FirstOrDefaultAsync();
@@ -79,6 +80,11 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
             return rs.SetError(Messages.Error.EntityNotFound("Planilla", true));
         if ((route.UserId != _token.UserId && _token.Role != Roles.Admin) || (route.IsStatic && _token.Role != Roles.Admin))
             return rs.SetError(Messages.Error.Unauthorized(), 403);
+
+        await PopulateCartsData([.. route.Carts.Where(c => c.State == State.Confirmed)]);
+        
+        if (!route.IsStatic)
+            await PopulatePendingCartsData([.. route.Carts.Where(c => c.State == State.Pending)]);
 
         // Dealers see just the carts
         if (_token.Role == Roles.Admin)
@@ -325,7 +331,10 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
         var client = await ClientsNotInRouteQuery(rq.RouteId).Where(x => x.ID == rq.ClientId).ToListAsync();
         return new BaseResponse<ClientsNotInRouteResponse>
         {
-            Data = new ClientsNotInRouteResponse { Items = client.Select(MapClientSummary).ToList() }
+            Data = new ClientsNotInRouteResponse
+            {
+                Items = [.. client.Select(MapClientSummary)]
+            }
         };
     }
 
@@ -337,7 +346,10 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
 
         return new BaseResponse<ClientsNotInRouteResponse>
         {
-            Data = new ClientsNotInRouteResponse { Items = clients.Select(MapClientSummary).ToList() }
+            Data = new ClientsNotInRouteResponse
+            {
+                Items = [.. clients.Select(MapClientSummary)]
+            }
         };
     }
 
@@ -525,6 +537,93 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
             Total = cartProducts.Where(x => x.Type == type).Sum(x => x.Total)
         }).ToList();
     }
+    #endregion
+
+    #region Private
+    // Populates the same data GetForEdit returns for every cart, but batched to avoid one query per cart
+    private async Task PopulateCartsData(List<RouteCartItem> carts)
+    {
+        if (carts.Count == 0)
+            return;
+
+        var cartIds = carts.Select(c => c.Id).ToList();
+
+        var cartProducts = await _db.CartProducts.AsNoTracking().Where(x => cartIds.Contains(x.CartID)).ToListAsync();
+        var cartAbonoProducts = await _db.CartAbonoProducts.AsNoTracking().Where(x => cartIds.Contains(x.CartID)).ToListAsync();
+        var cartPaymentMethods = await _db.CartPaymentMethods
+            .AsNoTracking()
+            .Where(x => cartIds.Contains(x.CartID))
+            .Select(x => new { x.CartID, x.PaymentMethodID, PaymentMethodName = x.PaymentMethod.Name, x.Amount })
+            .ToListAsync();
+
+        foreach (var cart in carts)
+        {
+            cart.Products = [.. cartProducts.Where(x => x.CartID == cart.Id).Select(x => new ProductQuantityItem
+            {
+                Type = x.Type,
+                TypeName = x.Type.GetDisplayName(),
+                Quantity = x.Quantity,
+                SettedPrice = x.SettedPrice
+            })];
+
+            cart.AbonoProducts = [.. cartAbonoProducts.Where(x => x.CartID == cart.Id).Select(x => new ProductQuantityItem
+            {
+                Type = x.Type,
+                TypeName = x.Type.GetDisplayName(),
+                Quantity = x.Quantity
+            })];
+
+            cart.PaymentMethods = [.. cartPaymentMethods.Where(x => x.CartID == cart.Id).Select(x => new GetCartForEditResponse.PaymentMethodOptionItem
+            {
+                Id = x.PaymentMethodID,
+                Name = x.PaymentMethodName,
+                Selected = true,
+                Amount = x.Amount
+            })];
+        }
+    }
+
+    // Populates the same data GetProductsAndAbono returns for every pending cart (product/abono options for the editor), batched to avoid one query per cart
+    private async Task PopulatePendingCartsData(List<RouteCartItem> carts)
+    {
+        if (carts.Count == 0)
+            return;
+
+        var clientIds = carts.Select(c => c.ClientId).Distinct().ToList();
+        var today = LocalClock.Now;
+
+        var products = await _db.ClientProducts
+            .AsNoTracking()
+            .Where(x => clientIds.Contains(x.ClientID) && x.Product.Type != ProductType.Maquina)
+            .Select(x => new { x.ClientID, x.Product.Type, x.Product.Name, x.Product.Price })
+            .ToListAsync();
+
+        var abonoProducts = (await _db.AbonoRenewalProducts
+            .AsNoTracking()
+            .Where(x => x.Type != ProductType.Maquina && clientIds.Contains(x.AbonoRenewal.ClientID) && x.CreatedAt.Month == today.Month && x.CreatedAt.Year == today.Year)
+            .Select(x => new { x.AbonoRenewal.ClientID, x.Type, x.Available })
+            .ToListAsync())
+            .GroupBy(x => new { x.ClientID, x.Type })
+            .Select(g => new { g.Key.ClientID, g.Key.Type, Available = g.Sum(y => y.Available) })
+            .ToList();
+
+        foreach (var cart in carts)
+        {
+            cart.AvailableProducts = [.. products.Where(x => x.ClientID == cart.ClientId).Select(x => new GetProductsAndAbonoResponse.ProductOptionItem
+            {
+                Type = x.Type,
+                Name = x.Name,
+                Price = x.Price
+            })];
+
+            cart.AvailableAbonoProducts = [.. abonoProducts.Where(x => x.ClientID == cart.ClientId).Select(x => new GetProductsAndAbonoResponse.AbonoProductOptionItem
+            {
+                Type = x.Type,
+                Name = x.Type.GetDisplayName(),
+                Available = x.Available
+            })];
+        }
+    }
 
     private static IQueryable<RouteItem> ProjectRoutes(IQueryable<Models.Route> query)
     {
@@ -600,5 +699,6 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
         if (_db.Database.CurrentTransaction != null)
             await _db.Database.RollbackTransactionAsync();
     }
+    #endregion
 }
 
