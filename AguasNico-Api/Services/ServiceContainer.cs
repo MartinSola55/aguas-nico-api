@@ -6,6 +6,7 @@ public static class ServiceContainer
     {
         services.AddScoped<TokenService>();
         services.AddScoped<AuthService>();
+        services.AddScoped<UserService>();
         services.AddScoped<ProductService>();
         services.AddScoped<ClientService>();
         services.AddScoped<AbonoService>();
