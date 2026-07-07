@@ -10,5 +10,5 @@ public class HomeController(HomeService homeService) : BaseController
     private readonly HomeService _homeService = homeService;
 
     [HttpGet]
-    public async Task<BaseResponse<GetDashboardResponse>> GetDashboard() => await _homeService.GetDashboard();
+    public async Task<BaseResponse<GetDashboardResponse>> GetDashboard([FromQuery] GetDashboardRequest rq) => await _homeService.GetDashboard(rq);
 }
