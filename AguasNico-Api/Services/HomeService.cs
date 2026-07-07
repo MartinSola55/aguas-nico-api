@@ -25,17 +25,10 @@ public class HomeService(APIContext context, TokenService tokenService)
                     .Select(x => new Models.DTO.Routes.RouteItem
                     {
                         Id = x.ID,
-                        UserId = x.UserID,
-                        DealerName = x.User.Name,
-                        TruckNumber = x.User.TruckNumber ?? 0,
-                        DayOfWeek = x.DayOfWeek,
-                        IsStatic = x.IsStatic,
                         IsClosed = x.IsClosed,
-                        DispenserPrice = x.DispenserPrice,
                         CreatedAt = x.CreatedAt,
                         TotalCarts = x.Carts.Count,
                         CompletedCarts = x.Carts.Count(y => y.State != State.Pending),
-                        PendingCarts = x.Carts.Count(y => y.State == State.Pending)
                     })
                     .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync()
