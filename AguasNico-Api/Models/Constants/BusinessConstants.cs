@@ -8,6 +8,65 @@ public static class BusinessConstants
     public const int InvoiceSalesPoint = 5;
 }
 
+public enum Actividad
+{
+    SODA_GRAVADO,
+    AGUA_GRAVADA,
+    AGUA_EXENTA,
+    ALQUILER_DISPENSER,
+}
+
+public static class ProductTax
+{
+    private static readonly (Actividad Actividad, decimal Alicuota) Fallback = (Actividad.AGUA_GRAVADA, 21m);
+
+    private static readonly Dictionary<ProductType, (Actividad Actividad, decimal Alicuota)> Fixed = new()
+    {
+        { ProductType.Soda, (Actividad.SODA_GRAVADO, 21m) },
+        { ProductType.Maquina, (Actividad.ALQUILER_DISPENSER, 21m) },
+    };
+
+    private static readonly HashSet<ProductType> Water = [ProductType.B20L, ProductType.B12L, ProductType.B5L];
+
+    // Ley de IVA art. 7 inc. f: el agua ordinaria natural solo pierde la exención
+    // cuando el comprador es responsable inscripto.
+    private static readonly Dictionary<TaxCondition, (Actividad Actividad, decimal Alicuota)> WaterByTaxCondition = new()
+    {
+        { TaxCondition.RI, (Actividad.AGUA_GRAVADA, 21m) },
+        { TaxCondition.MO, (Actividad.AGUA_EXENTA, 0m) },
+        { TaxCondition.EX, (Actividad.AGUA_EXENTA, 0m) },
+        { TaxCondition.CF, (Actividad.AGUA_EXENTA, 0m) },
+    };
+
+    /// <summary>
+    /// Actividad y alícuota del agua para un comprador. También se usa para los abonos, que se
+    /// facturan enteros como agua.
+    /// </summary>
+    public static (Actividad Actividad, decimal Alicuota) ResolveWater(TaxCondition? taxCondition)
+    {
+        if (taxCondition.HasValue && WaterByTaxCondition.TryGetValue(taxCondition.Value, out var waterTax))
+            return waterTax;
+
+        return Fallback;
+    }
+
+    public static (Actividad Actividad, decimal Alicuota) Resolve(ProductType type, TaxCondition? taxCondition)
+    {
+        if (Fixed.TryGetValue(type, out var fixedTax))
+            return fixedTax;
+
+        if (Water.Contains(type))
+            return ResolveWater(taxCondition);
+
+        return Fallback;
+    }
+
+    public static decimal NetoFromSubtotal(decimal subtotal, decimal alicuota)
+    {
+        return alicuota == 0m ? subtotal : subtotal / (1m + alicuota / 100m);
+    }
+}
+
 public static class Roles
 {
     public const string Admin = "ADMIN";
