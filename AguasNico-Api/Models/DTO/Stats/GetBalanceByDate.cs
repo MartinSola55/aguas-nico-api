@@ -8,7 +8,8 @@ public class GetBalanceByDateRequest
 public class GetBalanceByDateResponse
 {
     public decimal Total { get; set; }
-    public decimal CartPaymentMethods { get; set; }
+    public decimal Cash { get; set; }
+    public decimal MercadoPago { get; set; }
     public decimal Transfers { get; set; }
     public decimal Expenses { get; set; }
     public decimal DispenserPrice { get; set; }

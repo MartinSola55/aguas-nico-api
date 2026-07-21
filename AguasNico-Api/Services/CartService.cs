@@ -183,7 +183,7 @@ public class CartService(APIContext context)
             Priority = maxPriority + 1,
             Products = [.. rq.Products.Where(x => x.Quantity > 0).Select(x => new CartProduct { Type = x.Type, Quantity = x.Quantity })],
             AbonoProducts = [.. rq.AbonoProducts.Where(x => x.Quantity > 0).Select(x => new CartAbonoProduct { Type = x.Type, Quantity = x.Quantity })],
-            PaymentMethods = [.. rq.PaymentMethods.Select(x => new CartPaymentMethod { PaymentMethodID = x.PaymentMethodId, Amount = x.Amount })]
+            PaymentMethods = [.. rq.PaymentMethods.Where(x => x.Amount > 0).Select(x => new CartPaymentMethod { PaymentMethodID = x.PaymentMethodId, Amount = x.Amount })]
         };
 
         try
@@ -413,7 +413,8 @@ public class CartService(APIContext context)
             }
         }
 
-        foreach (var paymentMethod in paymentMethods)
+        // Only methods with a positive amount are persisted; the rest stay soft-deleted (reverted in SoftDeleteEffects).
+        foreach (var paymentMethod in paymentMethods.Where(x => x.Amount > 0))
         {
             client.Debt -= paymentMethod.Amount;
 
@@ -471,7 +472,7 @@ public class CartService(APIContext context)
         }
 
         total = 0;
-        foreach (var paymentMethod in paymentMethods)
+        foreach (var paymentMethod in paymentMethods.Where(x => x.Amount > 0))
         {
             total += paymentMethod.Amount;
             if (newCart == null)

@@ -25,7 +25,8 @@ public class CatalogService(APIContext context)
                 PaymentMethods = await _db.PaymentMethods.AsNoTracking().Select(x => new PaymentMethodCatalogItem
                 {
                     Id = x.ID,
-                    Description = x.Name
+                    Description = x.Name,
+                    Code = x.Code
                 }).ToListAsync()
             }
         };

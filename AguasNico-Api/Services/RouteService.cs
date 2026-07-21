@@ -458,18 +458,20 @@ public class RouteService(APIContext context, TokenService tokenService, CartSer
 
     public async Task<List<PaymentAmountItem>> GetTotalCollected(long routeId)
     {
-        var methods = await _db.PaymentMethods.AsNoTracking().Where(x => x.Name == "Efectivo").ToListAsync();
-        var result = new List<PaymentAmountItem>();
-        foreach (var method in methods)
-        {
-            result.Add(new PaymentAmountItem
-            {
-                PaymentMethodId = method.ID,
-                PaymentMethodName = method.Name,
-                Amount = await _db.CartPaymentMethods.Where(x => x.Cart.RouteID == routeId && x.PaymentMethodID == method.ID).SumAsync(x => x.Amount)
-            });
-        }
-        return result;
+        var amountsByCode = await _db.CartPaymentMethods
+            .Where(x => x.Cart.RouteID == routeId)
+            .GroupBy(x => x.PaymentMethod.Code)
+            .Select(g => new { Code = g.Key, Amount = g.Sum(y => y.Amount) })
+            .ToListAsync();
+
+        var cash = amountsByCode.Where(x => x.Code != PaymentMethodCodes.MercadoPago).Sum(x => x.Amount);
+        var mercadoPago = amountsByCode.Where(x => x.Code == PaymentMethodCodes.MercadoPago).Sum(x => x.Amount);
+
+        return
+        [
+            new PaymentAmountItem { PaymentMethodName = "Efectivo", Code = PaymentMethodCodes.Cash, Amount = cash },
+            new PaymentAmountItem { PaymentMethodName = "Mercado Pago", Code = PaymentMethodCodes.MercadoPago, Amount = mercadoPago }
+        ];
     }
 
     public async Task<List<SoldProductsItem>> GetSoldProductsByDate(DateTime date)

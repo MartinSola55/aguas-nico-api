@@ -119,10 +119,7 @@ public class StatsService(APIContext context)
                 DealerId = g.Key.UserID,
                 DealerName = g.Key.Name,
                 Quantity = g.Sum(y => y.Quantity),
-                Products = g
-                    .Select(y => new ProductSoldItem { Type = y.Type.GetDisplayName(), Quantity = y.Quantity })
-                    .OrderByDescending(p => p.Quantity)
-                    .ToList()
+                Products = [.. g.Select(y => new ProductSoldItem { Type = y.Type.GetDisplayName(), Quantity = y.Quantity }).OrderByDescending(p => p.Quantity)]
             })
             .OrderByDescending(x => x.Quantity)
             .ToList();
@@ -135,7 +132,14 @@ public class StatsService(APIContext context)
 
     public async Task<BaseResponse<GetBalanceByDateResponse>> GetBalanceByDate(GetBalanceByDateRequest rq)
     {
-        var cartPaymentMethods = await _db.CartPaymentMethods.Where(x => x.CreatedAt.Date == rq.Date.Date).SumAsync(x => x.Amount);
+        var paymentsByGroup = await _db.CartPaymentMethods
+            .Where(x => x.Cart.Route.CreatedAt.Date == rq.Date.Date)
+            .GroupBy(x => x.PaymentMethod.Code == PaymentMethodCodes.MercadoPago)
+            .Select(g => new { IsMercadoPago = g.Key, Amount = g.Sum(y => y.Amount) })
+            .ToListAsync();
+
+        var mercadoPago = paymentsByGroup.Where(x => x.IsMercadoPago).Sum(x => x.Amount);
+        var cash = paymentsByGroup.Where(x => !x.IsMercadoPago).Sum(x => x.Amount);
         var transfers = await _db.Transfers.Where(x => x.Date.Date == rq.Date.Date).SumAsync(x => x.Amount);
         var expenses = await _db.Expenses.Where(x => x.CreatedAt.Date == rq.Date.Date).SumAsync(x => x.Amount);
         var dispenserPrice = await _db.Routes.Where(x => x.CreatedAt.Date == rq.Date.Date).SumAsync(x => x.DispenserPrice);
@@ -144,8 +148,9 @@ public class StatsService(APIContext context)
         {
             Data = new GetBalanceByDateResponse
             {
-                Total = cartPaymentMethods + transfers + dispenserPrice - expenses,
-                CartPaymentMethods = cartPaymentMethods,
+                Total = cash + mercadoPago + transfers + dispenserPrice - expenses,
+                Cash = cash,
+                MercadoPago = mercadoPago,
                 Transfers = transfers,
                 Expenses = expenses,
                 DispenserPrice = dispenserPrice
