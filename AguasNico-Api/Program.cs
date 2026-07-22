@@ -6,7 +6,6 @@ using AguasNico_Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Globalization;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,7 +23,6 @@ builder.Services.AddDbContext<APIContext>((serviceProvider, options) =>
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 
 var key = builder.Configuration["Jwt:Key"];
@@ -53,12 +51,6 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(Policies.Dealer, policy => policy.RequireRole(Roles.Admin, Roles.Dealer));
 
 var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 app.UseCors(cors => cors.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 

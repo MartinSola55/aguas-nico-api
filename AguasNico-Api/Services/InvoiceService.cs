@@ -4,6 +4,7 @@ using AguasNico_Api.Models.Constants;
 using AguasNico_Api.Models.DTO;
 using AguasNico_Api.Models.DTO.Invoices;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Text;
 
 namespace AguasNico_Api.Services;
@@ -11,6 +12,9 @@ namespace AguasNico_Api.Services;
 public class InvoiceService(APIContext context)
 {
     private readonly APIContext _db = context;
+
+    // Andresito ignora esta columna cuando los ítems traen su propia alícuota (formato de 6 campos).
+    private const int IVA_RATE = 21;
 
     public async Task<BaseResponse<GetInvoicesResponse>> GetInvoices(GetInvoicesRequest rq)
     {
@@ -108,10 +112,10 @@ public class InvoiceService(APIContext context)
                 EscapeCsvField(row.ClientCuit),
                 BusinessConstants.InvoiceSalesPoint.ToString(),
                 EscapeCsvField(row.InvoiceTypeId),
-                ((int)row.Neto).ToString(),
-                row.IvaRate.ToString(),
-                ((int)row.Total).ToString(),
-                row.TaxConditionTypeId.ToString(),
+                row.Neto.ToString("0.00", CultureInfo.InvariantCulture),
+                row.IvaRate.ToString(CultureInfo.InvariantCulture),
+                ((int)row.Total).ToString(CultureInfo.InvariantCulture),
+                row.TaxConditionTypeId.ToString(CultureInfo.InvariantCulture),
                 EscapeCsvField(row.ClientName),
                 EscapeCsvField(row.ClientAddress),
                 EscapeCsvField(row.Description),
@@ -164,45 +168,58 @@ public class InvoiceService(APIContext context)
             var products = cartProducts
                 .Where(x => x.ClientID == client.ID)
                 .GroupBy(x => x.Type)
-                .Select(group => new InvoiceProductCsv
-                {
-                    Type = group.Key.GetDisplayName(),
-                    Quantity = group.Sum(x => x.Quantity),
-                    Subtotal = group.Sum(x => x.SettedPrice * x.Quantity)
-                })
+                .Select(group => BuildProduct(
+                    group.Key.GetDisplayName(),
+                    group.Sum(x => x.Quantity),
+                    group.Sum(x => x.SettedPrice * x.Quantity),
+                    ProductTax.Resolve(group.Key, client.TaxCondition)))
                 .ToList();
 
+            // El abono se factura como una única línea de agua, tenga o no máquina: su precio es
+            // propio del abono y no se puede repartir entre los productos que lo componen.
             products.AddRange(abonoRenewals
                 .Where(x => x.ClientID == client.ID)
                 .OrderBy(x => x.CreatedAt)
-                .Select(x => new InvoiceProductCsv
-                {
-                    Type = x.AbonoName,
-                    Quantity = 1,
-                    Subtotal = x.SettedPrice
-                }));
+                .Select(x => BuildProduct(x.AbonoName, 1, x.SettedPrice, ProductTax.ResolveWater(client.TaxCondition))));
 
             if (products.Count == 0)
                 continue;
 
-            var total = products.Sum(x => x.Subtotal);
             result.Add(new InvoiceCsvRowItem
             {
                 ExternalId = $"SLN-{client.ID}-{DateTime.Now:yyyyMMddHHmmss}",
                 ClientCuit = client.CUIT ?? "",
                 InvoiceTypeId = client.InvoiceType == InvoiceType.A ? "1" : client.InvoiceType == InvoiceType.B ? "6" : "",
-                Neto = total / 1.21m,
-                IvaRate = 21,
-                Total = total,
+                Neto = decimal.Round(products.Sum(x => x.Neto), 2, MidpointRounding.AwayFromZero),
+                IvaRate = IVA_RATE,
+                Total = products.Sum(x => x.Subtotal),
                 TaxConditionTypeId = (int)client.TaxCondition.GetValueOrDefault(),
                 ClientName = client.Name,
                 ClientAddress = client.Address,
-                Description = string.Join(",", products.Select(p => $"[{p.Type}, {p.Quantity}, {BusinessConstants.InvoiceUnitType}, {(int)p.Subtotal}]")),
+                Description = string.Join(",", products.Select(FormatProduct)),
                 Email = client.Email ?? "",
             });
         }
 
         return result;
+    }
+
+    private static InvoiceProductCsv BuildProduct(string type, int quantity, decimal subtotal, (Actividad Actividad, decimal Alicuota) tax)
+    {
+        return new InvoiceProductCsv
+        {
+            Type = type,
+            Quantity = quantity,
+            Subtotal = subtotal,
+            Alicuota = tax.Alicuota,
+            Actividad = tax.Actividad,
+            Neto = ProductTax.NetoFromSubtotal(subtotal, tax.Alicuota),
+        };
+    }
+
+    private static string FormatProduct(InvoiceProductCsv product)
+    {
+        return $"[{product.Type}, {product.Quantity}, {BusinessConstants.InvoiceUnitType}, {(int)product.Subtotal}, {product.Alicuota.ToString(CultureInfo.InvariantCulture)}, {product.Actividad}]";
     }
 
     private IQueryable<Client> GetInvoiceClientsQuery(Day? invoiceDay, string invoiceDealer)
@@ -241,6 +258,9 @@ public class InvoiceService(APIContext context)
         public string Type { get; set; } = "";
         public int Quantity { get; set; }
         public decimal Subtotal { get; set; }
+        public decimal Alicuota { get; set; }
+        public Actividad Actividad { get; set; }
+        public decimal Neto { get; set; }
     }
 }
 
