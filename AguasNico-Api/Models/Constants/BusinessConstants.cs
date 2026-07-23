@@ -8,6 +8,15 @@ public static class BusinessConstants
     public const int InvoiceSalesPoint = 5;
 }
 
+public static class PaymentMethodCodes
+{
+    public const string Cash = "EFECT";
+    public const string Transfer = "TRANSF";
+    public const string MercadoPago = "MP";
+
+    public static readonly string[] CashGroup = [Cash, Transfer];
+}
+
 public static class Roles
 {
     public const string Admin = "ADMIN";
